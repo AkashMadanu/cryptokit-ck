@@ -6,7 +6,7 @@
 
 **CryptoKit (CK)** is a comprehensive, modular cryptography toolkit designed to showcase cryptographic fundamentals through practical implementations. Built for Linux systems, it provides a unified CLI interface for encryption, hashing, hash analysis, steganography, and file metadata analysis.
 
-## 🎯 Project Goals
+## Project Goals
 
 This project demonstrates:
 - **Symmetric Encryption**: Multiple algorithms with secure key management
@@ -15,7 +15,7 @@ This project demonstrates:
 - **Steganography**: Data hiding in various file formats
 - **File Analysis**: Comprehensive metadata extraction and security analysis
 
-## 🏗️ Architecture
+## Architecture
 
 CryptoKit follows a modular, plugin-based architecture that emphasizes:
 - **Flexibility**: Easy to add new algorithms and tools
@@ -23,7 +23,7 @@ CryptoKit follows a modular, plugin-based architecture that emphasizes:
 - **Maintainability**: Clean separation of concerns
 - **Security**: Secure coding practices throughout
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 CryptoKit/
@@ -41,39 +41,39 @@ CryptoKit/
 └── scripts/               # Utility scripts
 ```
 
-## 🚀 Features
+## Features
 
-### Phase 1: Symmetric Encryption ✅
+### Phase 1: Symmetric Encryption (Complete)
 - **Multiple Algorithms**: AES, ChaCha20, Blowfish, 3DES
 - **Secure Key Derivation**: PBKDF2, Argon2 support
 - **File & Directory Encryption**: Single files or entire directories
 - **Integrity Protection**: HMAC verification included
 
-### Phase 2: Hashing & Verification 🟡
+### Phase 2: Hashing & Verification (In Progress)
 - **Multiple Hash Algorithms**: SHA family, Blake2, MD5, CRC32
 - **Batch Processing**: Efficient handling of multiple files
 - **Integrity Verification**: Compare against known hash values
 - **Merkle Tree Support**: Directory integrity verification
 
-### Phase 3: Hash Analysis 🔴
+### Phase 3: Hash Analysis (Planned)
 - **Automatic Hash Detection**: Pattern-based identification
 - **External Tool Integration**: John the Ripper, Hashcat
 - **Time Estimation**: Cracking time predictions
 - **Multiple Attack Modes**: Dictionary, brute force, hybrid
 
-### Phase 4: Steganography 🔴
+### Phase 4: Steganography (Planned)
 - **Image Steganography**: LSB, DCT-based techniques
 - **Text Hiding**: Whitespace, Unicode methods
 - **Binary Support**: Hide data in various file formats
 - **Encryption Integration**: Encrypt before hiding
 
-### Phase 5: File Analysis 🔴
+### Phase 5: File Analysis (Planned)
 - **Metadata Extraction**: Comprehensive file information
 - **Content Analysis**: Entropy, pattern detection
 - **Security Scanning**: Suspicious content identification
 - **Multiple Output Formats**: JSON, CSV, human-readable
 
-## 🛠️ Installation
+## Installation
 
 ### Prerequisites
 ```bash
@@ -104,7 +104,7 @@ pip install -e .
 ck --version
 ```
 
-## 📖 Quick Start
+## Quick Start
 
 ### Interactive Mode
 ```bash
@@ -127,7 +127,7 @@ ck config set encryption.default_algorithm aes-256-gcm
 ck config set cracking.tools.hashcat.gpu_enabled true
 ```
 
-## 🔧 Development
+## Development
 
 ### Development Setup
 ```bash
@@ -153,14 +153,14 @@ CryptoKit's modular architecture makes it easy to extend:
 3. **New Steganography Method**: Create plugin in `steganography/`
 4. **New CLI Command**: Add to `cli/commands/`
 
-## 📚 Documentation
+## Documentation
 
 - [API Documentation](docs/api/)
 - [User Guide](docs/user-guide.md)
 - [Developer Guide](docs/developer-guide.md)
 - [Security Considerations](docs/security.md)
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run all tests
@@ -174,7 +174,7 @@ pytest tests/integration/
 pytest --cov=ck --cov-report=html
 ```
 
-## 🔒 Security Considerations
+## Security Considerations
 
 - **Memory Safety**: Secure deletion of sensitive data
 - **Key Management**: Proper key derivation and storage
@@ -182,7 +182,7 @@ pytest --cov=ck --cov-report=html
 - **Side-Channel Resistance**: Timing attack mitigation
 - **Input Validation**: Comprehensive input sanitization
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -190,11 +190,11 @@ pytest --cov=ck --cov-report=html
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📝 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🎓 Educational Purpose
+## Educational Purpose
 
 This project is designed for educational purposes to demonstrate:
 - Cryptographic algorithm implementation
@@ -203,11 +203,11 @@ This project is designed for educational purposes to demonstrate:
 - CLI application development
 - Integration with external security tools
 
-## ⚠️ Disclaimer
+## Disclaimer
 
 This tool is for educational and authorized testing purposes only. Users are responsible for ensuring compliance with applicable laws and regulations. The authors are not responsible for any misuse of this software.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [cryptography](https://github.com/pyca/cryptography) - Modern cryptographic library
 - [John the Ripper](https://www.openwall.com/john/) - Password cracking tool
@@ -216,4 +216,4 @@ This tool is for educational and authorized testing purposes only. Users are res
 
 ---
 
-**Status**: 🚧 Active Development | **Version**: 0.1.0-alpha | **Python**: 3.9+
+**Status**: Active Development | **Version**: 0.1.0-alpha | **Python**: 3.9+

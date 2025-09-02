@@ -5,19 +5,19 @@
 
 ## Project Philosophy & Design Principles
 
-### 🏗️ Modular Architecture
+### Modular Architecture
 - **Separation of Concerns**: Each cryptographic function is isolated in its own module
 - **Plugin-Based Design**: Easy to add new algorithms or tools without modifying core code
 - **Interface Abstraction**: Common interfaces for similar operations (e.g., all encryption algorithms)
 - **Dependency Injection**: External tools (john, hashcat) are configurable and swappable
 
-### 🔧 Flexibility & Adaptability
+### Flexibility & Adaptability
 - **Configuration-Driven**: Settings stored in YAML/JSON for easy modification
 - **Algorithm Registry**: Dynamic registration of new encryption/hashing algorithms
 - **Hook System**: Pre/post operation hooks for logging, validation, progress tracking
 - **Factory Pattern**: Dynamic creation of cryptographic objects based on user input
 
-### 📈 Extensibility Framework
+### Extensibility Framework
 - **Plugin Directory Structure**: `plugins/` folder for custom extensions
 - **API Compatibility**: Stable internal APIs for third-party extensions
 - **Event System**: Subscribe to cryptographic operations for monitoring/logging
@@ -25,9 +25,9 @@
 
 ## Development Phases
 
-## 📋 Phase 1: Foundation & Symmetric Encryption
+## Phase 1: Foundation & Symmetric Encryption
 **Duration**: 2-3 weeks  
-**Status**: 🟡 Planned
+**Status**: Planned
 
 ### Phase 1.1: Project Infrastructure (Week 1)
 **Steps:**
@@ -82,17 +82,17 @@
    - Anti-forensics considerations
 
 **Deliverables:**
-- ✅ Working symmetric encryption for files
-- ✅ Directory encryption with multiple algorithms
-- ✅ CLI interface for encryption operations
-- ✅ Configuration file support
-- ✅ Basic logging system
+- Working symmetric encryption for files
+- Directory encryption with multiple algorithms
+- CLI interface for encryption operations
+- Configuration file support
+- Basic logging system
 
 ---
 
-## 📋 Phase 2: Hashing & Integrity Verification
+## Phase 2: Hashing & Integrity Verification
 **Duration**: 2 weeks  
-**Status**: 🔴 Not Started
+**Status**: Not Started
 
 ### Phase 2.1: Hash Generation (Week 1)
 **Steps:**
@@ -129,16 +129,16 @@
    - Cross-platform compatibility
 
 **Deliverables:**
-- ✅ Multi-algorithm hash generation
-- ✅ Directory hashing with verification
-- ✅ Integrity checking system
-- ✅ Multiple output format support
+- Multi-algorithm hash generation
+- Directory hashing with verification
+- Integrity checking system
+- Multiple output format support
 
 ---
 
-## 📋 Phase 3: Hash Analysis & Cracking
+## Phase 3: Hash Analysis & Cracking
 **Duration**: 2-3 weeks  
-**Status**: 🔴 Not Started
+**Status**: Not Started
 
 ### Phase 3.1: Hash Detection & Analysis (Week 1)
 **Steps:**
@@ -175,17 +175,17 @@
    - Performance optimization
 
 **Deliverables:**
-- ✅ Automatic hash type detection
-- ✅ John the Ripper integration
-- ✅ Hashcat integration with GPU support
-- ✅ Time estimation and progress tracking
-- ✅ Multiple attack strategies
+- Automatic hash type detection
+- John the Ripper integration
+- Hashcat integration with GPU support
+- Time estimation and progress tracking
+- Multiple attack strategies
 
 ---
 
-## 📋 Phase 4: Steganography
+## Phase 4: Steganography
 **Duration**: 2-3 weeks  
-**Status**: 🔴 Not Started
+**Status**: Not Started
 
 ### Phase 4.1: Image Steganography (Week 1-2)
 **Steps:**
@@ -216,16 +216,16 @@
    - File format abuse
 
 **Deliverables:**
-- ✅ Image steganography (multiple formats)
-- ✅ Text and binary file hiding
-- ✅ Passphrase protection
-- ✅ Capacity estimation tools
+- Image steganography (multiple formats)
+- Text and binary file hiding
+- Passphrase protection
+- Capacity estimation tools
 
 ---
 
-## 📋 Phase 5: File Metadata & Analysis
+## Phase 5: File Metadata & Analysis
 **Duration**: 1-2 weeks  
-**Status**: 🔴 Not Started
+**Status**: Not Started
 
 ### Phase 5.1: Metadata Extraction (Week 1)
 **Steps:**
@@ -256,14 +256,14 @@
    - Anomaly detection
 
 **Deliverables:**
-- ✅ Comprehensive metadata extraction
-- ✅ File type analysis tools
-- ✅ Security scanning integration
-- ✅ Detailed reporting system
+- Comprehensive metadata extraction
+- File type analysis tools
+- Security scanning integration
+- Detailed reporting system
 
 ---
 
-## 🏗️ Architecture Design
+## Architecture Design
 
 ### Directory Structure
 ```
@@ -396,7 +396,7 @@ class CommandRegistry:
     - generate_help()
 ```
 
-## 🔧 Technology Stack
+## Technology Stack
 
 ### Core Dependencies
 - **Python 3.9+**: Main programming language
@@ -420,7 +420,7 @@ class CommandRegistry:
 - **mypy**: Type checking
 - **sphinx**: Documentation generation
 
-## 🎯 Success Metrics
+## Success Metrics
 
 ### Phase Completion Criteria
 1. **Functionality**: All specified features working correctly
@@ -435,7 +435,7 @@ class CommandRegistry:
 - **Logging**: Comprehensive logging for debugging and auditing
 - **Security**: Secure coding practices and data handling
 
-## 🚀 Future Enhancements (Post-MVP)
+## Future Enhancements (Post-MVP)
 
 ### Advanced Features
 - **Asymmetric Cryptography**: RSA, ECC, post-quantum algorithms

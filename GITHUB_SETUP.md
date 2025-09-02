@@ -1,6 +1,6 @@
 # GitHub Setup Guide for CryptoKit (CK)
 
-## 🚀 Quick GitHub Setup
+## Quick GitHub Setup
 
 ### Option 1: Create Repository on GitHub First (Recommended)
 
@@ -43,7 +43,7 @@ git branch -M main
 git push -u origin main
 ```
 
-## 📝 After Pushing to GitHub
+## After Pushing to GitHub
 
 ### Add Repository Topics/Tags
 On your GitHub repository page, click the gear icon next to "About" and add these topics:
@@ -73,7 +73,7 @@ On your GitHub repository page, click the gear icon next to "About" and add thes
 2. **GitHub Actions**: 
    - Set up automated testing (future enhancement)
 
-## 🔧 Development Workflow
+## Development Workflow
 
 ### Daily Development
 ```bash
@@ -99,7 +99,7 @@ git push origin feature/phase1-encryption
 git pull origin main
 ```
 
-## 📋 Git Best Practices for This Project
+## Git Best Practices for This Project
 
 ### Commit Message Format
 ```
@@ -121,24 +121,24 @@ refactor: Reorganize encryption module structure
 - `feature/*`: Individual feature development
 - `hotfix/*`: Critical bug fixes
 
-## 🎯 GitHub Repository Structure
+## GitHub Repository Structure
 
 Your repository will look like this:
 ```
 cryptokit-ck/
-├── 📁 .github/workflows/     (Future: CI/CD)
-├── 📋 README.md             ⭐ Main project overview
-├── 📋 PROJECT_PLAN.md       📊 Detailed development plan
-├── 🔧 setup.py             📦 Package installation
-├── 📝 requirements.txt     🐍 Dependencies
-├── 🔒 LICENSE              ⚖️ MIT License
-├── 📁 ck/                  🏗️ Main source code
-├── 📁 config/              ⚙️ Configuration files
-├── 📁 tests/               🧪 Test suite
-└── 📁 docs/                📖 Documentation
+├── .github/workflows/     (Future: CI/CD)
+├── README.md             (Main project overview)
+├── PROJECT_PLAN.md       (Detailed development plan)
+├── setup.py             (Package installation)
+├── requirements.txt     (Dependencies)
+├── LICENSE              (MIT License)
+├── ck/                  (Main source code)
+├── config/              (Configuration files)
+├── tests/               (Test suite)
+└── docs/                (Documentation)
 ```
 
-## 🤝 Collaboration Features
+## Collaboration Features
 
 ### Issues Template (Create `.github/ISSUE_TEMPLATE/`)
 - Bug reports
@@ -155,7 +155,7 @@ cryptokit-ck/
 - Testing requirements
 - Documentation requirements
 
-## 🏷️ Release Management
+## Release Management
 
 ### Version Tags
 ```bash
@@ -169,7 +169,7 @@ git push origin v0.1.0
 - Include changelog and binaries
 - Document breaking changes
 
-## 🔐 Security Considerations
+## Security Considerations
 
 ### Sensitive Data
 - Never commit passwords, API keys, or certificates
@@ -183,7 +183,7 @@ git push origin v0.1.0
 
 ---
 
-## 📞 Need Help?
+## Need Help?
 
 - **Git Documentation**: https://git-scm.com/docs
 - **GitHub Guides**: https://guides.github.com/

@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing to CryptoKit! This document provides guidelines for contributing to the project.
 
-## 🎯 Project Overview
+## Project Overview
 
 CryptoKit is a comprehensive cryptography toolkit designed for educational and practical use. The project follows a phase-based development approach:
 
@@ -12,7 +12,7 @@ CryptoKit is a comprehensive cryptography toolkit designed for educational and p
 - **Phase 4**: Steganography
 - **Phase 5**: File Metadata Analysis
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Python 3.9 or higher
@@ -39,7 +39,7 @@ pip install -e .
 python -m pytest tests/
 ```
 
-## 🤝 How to Contribute
+## How to Contribute
 
 ### 1. Issues
 - **Bug Reports**: Use the bug report template
@@ -65,7 +65,7 @@ python -m pytest tests/
 - [ ] Documentation is updated
 - [ ] Commit messages are descriptive
 
-## 📝 Development Guidelines
+## Development Guidelines
 
 ### Code Style
 - Follow PEP 8 style guide
@@ -100,7 +100,7 @@ test: add unit tests for hash detection
 refactor: reorganize encryption module structure
 ```
 
-## 🏗️ Architecture Guidelines
+## Architecture Guidelines
 
 ### Module Structure
 Each phase has its own module with standardized structure:
@@ -122,7 +122,7 @@ ck/<module>/
 - Use the ConfigManager for all configuration access
 - Validate configuration values
 
-## 🔍 Code Review Process
+## Code Review Process
 
 ### Review Criteria
 - Functionality works as intended
@@ -136,7 +136,7 @@ ck/<module>/
 - Address feedback promptly
 - Be responsive to questions and suggestions
 
-## 🐛 Bug Reports
+## Bug Reports
 
 ### Information to Include
 - Operating system and version
@@ -152,7 +152,7 @@ ck/<module>/
 - **Medium**: New feature bugs, performance issues
 - **Low**: Documentation, minor UI issues
 
-## 🌟 Feature Requests
+## Feature Requests
 
 ### Guidelines
 - Check existing issues first
@@ -166,7 +166,7 @@ ck/<module>/
 - Has clear scope and requirements
 - Community interest/support
 
-## 📋 Development Phases
+## Development Phases
 
 ### Current Phase: Symmetric Encryption
 **Focus Areas:**
@@ -184,7 +184,7 @@ ck/<module>/
 ### Future Phases
 See [PROJECT_PLAN.md](PROJECT_PLAN.md) for detailed roadmaps of upcoming phases.
 
-## 🔒 Security
+## Security
 
 ### Reporting Security Issues
 - **DO NOT** create public issues for security vulnerabilities
@@ -198,7 +198,7 @@ See [PROJECT_PLAN.md](PROJECT_PLAN.md) for detailed roadmaps of upcoming phases.
 - Handle sensitive data properly
 - Use cryptographically secure random numbers
 
-## 📞 Getting Help
+## Getting Help
 
 ### Channels
 - **GitHub Issues**: Bug reports and feature requests
@@ -210,14 +210,14 @@ See [PROJECT_PLAN.md](PROJECT_PLAN.md) for detailed roadmaps of upcoming phases.
 - Pull Requests: 48-72 hours
 - Discussions: Best effort
 
-## 🏅 Recognition
+## Recognition
 
 Contributors will be recognized in:
 - README.md contributors section
 - Release notes
 - GitHub contributors page
 
-## 📄 License
+## License
 
 By contributing to CryptoKit, you agree that your contributions will be licensed under the MIT License.
 
