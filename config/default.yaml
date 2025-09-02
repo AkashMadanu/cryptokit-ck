@@ -1,0 +1,126 @@
+# Default Configuration for CryptoKit (CK)
+
+# General Settings
+general:
+  log_level: "INFO"
+  log_file: "ck.log"
+  max_log_size: "10MB"
+  backup_count: 5
+  temp_dir: "/tmp/ck"
+  
+# Encryption Settings
+encryption:
+  default_algorithm: "aes-256-gcm"
+  key_derivation: "argon2"
+  iterations: 100000
+  memory_cost: 65536  # 64MB for Argon2
+  parallelism: 1
+  salt_length: 32
+  
+  algorithms:
+    aes-128-cbc:
+      key_size: 128
+      block_size: 16
+    aes-256-cbc:
+      key_size: 256
+      block_size: 16
+    aes-256-gcm:
+      key_size: 256
+      block_size: 16
+      tag_length: 16
+    chacha20-poly1305:
+      key_size: 256
+      nonce_length: 12
+    blowfish:
+      key_size: 448
+      block_size: 8
+    3des:
+      key_size: 192
+      block_size: 8
+
+# Hashing Settings
+hashing:
+  default_algorithm: "sha256"
+  chunk_size: 65536  # 64KB chunks for large files
+  parallel_processing: true
+  max_workers: 4
+  
+  algorithms:
+    - md5
+    - sha1
+    - sha224
+    - sha256
+    - sha384
+    - sha512
+    - sha3-224
+    - sha3-256
+    - sha3-384
+    - sha3-512
+    - blake2b
+    - blake2s
+
+# Hash Cracking Settings
+cracking:
+  tools:
+    john:
+      path: "/usr/bin/john"
+      config: "/etc/john/john.conf"
+      wordlists:
+        - "/usr/share/wordlists/rockyou.txt"
+        - "/usr/share/wordlists/fasttrack.txt"
+    hashcat:
+      path: "/usr/bin/hashcat"
+      workload_profile: 3
+      gpu_enabled: true
+      cpu_threads: 0  # Auto-detect
+      
+  detection:
+    confidence_threshold: 0.8
+    max_candidates: 5
+    
+  estimation:
+    benchmark_file: "benchmarks.json"
+    default_speed: 1000000  # 1M hashes/sec fallback
+
+# Steganography Settings
+steganography:
+  image:
+    default_method: "lsb"
+    supported_formats:
+      - "PNG"
+      - "BMP"
+      - "TIFF"
+    quality_threshold: 0.95
+    
+  text:
+    methods:
+      - "whitespace"
+      - "unicode"
+      - "punctuation"
+    encoding: "utf-8"
+    
+  encryption_before_hiding: true
+  compression: true
+
+# Metadata Settings
+metadata:
+  extract_exif: true
+  extract_strings: true
+  min_string_length: 4
+  max_file_size: "100MB"
+  
+  analysis:
+    entropy_threshold: 7.5
+    suspicious_patterns:
+      - "password"
+      - "secret"
+      - "key"
+      - "token"
+
+# CLI Settings
+cli:
+  interactive_mode: true
+  confirm_destructive: true
+  progress_bars: true
+  colored_output: true
+  max_output_lines: 1000
