@@ -72,3 +72,7 @@ class PermissionError(CKException):
 class ValidationError(CKException):
     """Raised when input validation fails."""
     pass
+
+
+# Alias for backward compatibility
+CKError = CKException

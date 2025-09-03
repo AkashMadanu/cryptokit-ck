@@ -92,44 +92,49 @@ def create_parser() -> argparse.ArgumentParser:
     # Encryption commands
     encrypt_parser = subparsers.add_parser(
         "encrypt",
-        help="Encrypt files or directories",
-        aliases=["enc"]
+        help="Encrypt files using symmetric algorithms",
+        aliases=["enc", "e"]
     )
     encrypt_parser.add_argument(
-        "target",
-        help="File or directory to encrypt"
+        "file",
+        help="File to encrypt"
     )
     encrypt_parser.add_argument(
         "--algorithm", "-a",
-        default="aes-256-gcm",
-        help="Encryption algorithm (default: aes-256-gcm)"
+        choices=["3des", "aes-128"],
+        help="Encryption algorithm (will prompt if not provided)"
     )
     encrypt_parser.add_argument(
         "--output", "-o",
-        help="Output file/directory path"
+        help="Output file path (default: input_file.eck)"
     )
     encrypt_parser.add_argument(
         "--password", "-p",
         help="Encryption password (will prompt if not provided)"
     )
+    encrypt_parser.add_argument(
+        "--key-file", "-k",
+        help="Use existing key file instead of generating new one"
+    )
     
     # Decryption commands
     decrypt_parser = subparsers.add_parser(
-        "decrypt",
-        help="Decrypt files or directories",
-        aliases=["dec"]
+        "decrypt", 
+        help="Decrypt files using symmetric algorithms",
+        aliases=["dec", "d"]
     )
     decrypt_parser.add_argument(
-        "target",
-        help="File or directory to decrypt"
+        "file",
+        help="Encrypted file to decrypt (.eck)"
     )
     decrypt_parser.add_argument(
-        "--output", "-o",
-        help="Output file/directory path"
+        "--key-file", "-k",
+        required=True,
+        help="Key file for decryption"
     )
     decrypt_parser.add_argument(
-        "--password", "-p",
-        help="Decryption password (will prompt if not provided)"
+        "--output", "-o", 
+        help="Output file path (default: remove .eck extension)"
     )
     
     # Hashing commands
@@ -272,6 +277,10 @@ def interactive_mode(config: ConfigManager, logger) -> None:
                     show_interactive_help(console)
                 elif choice == "config":
                     show_config_menu(console, config)
+                elif choice == "encrypt":
+                    handle_interactive_encrypt(console, config, logger)
+                elif choice == "decrypt":
+                    handle_interactive_decrypt(console, config, logger)
                 else:
                     console.print(f"[yellow]'{choice}' functionality coming in Phase {get_phase_number(choice)}![/yellow]")
                     
@@ -283,60 +292,327 @@ def interactive_mode(config: ConfigManager, logger) -> None:
                 console.print(f"[red]Error: {e}[/red]")
                 
     except ImportError:
-        print("Interactive mode requires the 'rich' library.")
-        print("Install with: pip install rich")
-        logger.error("Rich library not available for interactive mode")
+        # Fallback to simple interactive mode without rich
+        print("CryptoKit (CK) - Interactive Mode")
+        print("Type 'help' for available commands or 'quit' to exit")
+        
+        while True:
+            try:
+                choice = input("\nCK> ").strip().lower()
+                
+                if choice == "quit":
+                    print("Goodbye!")
+                    break
+                elif choice == "help":
+                    show_simple_help()
+                elif choice == "config":
+                    show_simple_config_menu(config)
+                elif choice == "encrypt":
+                    handle_simple_encrypt(config, logger)
+                elif choice == "decrypt":
+                    handle_simple_decrypt(config, logger)
+                else:
+                    print(f"'{choice}' functionality coming in Phase {get_phase_number(choice)}!")
+                    
+            except KeyboardInterrupt:
+                print("\nGoodbye!")
+                break
+            except Exception as e:
+                logger.error(f"Error in interactive mode: {e}")
+                print(f"Error: {e}")
 
 
 def show_interactive_help(console) -> None:
-    """Show help in interactive mode."""
-    table = Table(title="Available Commands")
-    table.add_column("Command", style="cyan")
-    table.add_column("Description", style="white")
-    table.add_column("Status", style="green")
-    
-    commands = [
-        ("encrypt", "Encrypt files/directories", "🟡 Phase 1"),
-        ("decrypt", "Decrypt files/directories", "🟡 Phase 1"),
-        ("hash", "Generate file hashes", "🔴 Phase 2"),
-        ("crack", "Crack hash values", "🔴 Phase 3"),
-        ("stego", "Steganography operations", "🔴 Phase 4"),
-        ("metadata", "File metadata analysis", "🔴 Phase 5"),
-        ("config", "Configuration management", "✅ Available"),
-        ("help", "Show this help", "✅ Available"),
-        ("quit", "Exit the program", "✅ Available"),
-    ]
-    
-    for cmd, desc, status in commands:
-        table.add_row(cmd, desc, status)
-    
-    console.print(table)
+    """Show help in interactive mode with rich formatting."""
+    try:
+        from rich.table import Table
+        
+        table = Table(title="Available Commands")
+        table.add_column("Command", style="cyan")
+        table.add_column("Description", style="white")
+        table.add_column("Status", style="green")
+        
+        commands = [
+            ("encrypt", "Encrypt files with symmetric algorithms", "✅ Available"),
+            ("decrypt", "Decrypt files with symmetric algorithms", "✅ Available"),
+            ("hash", "Generate file hashes", "🔴 Phase 2"),
+            ("crack", "Crack hash values", "🔴 Phase 3"),
+            ("stego", "Steganography operations", "🔴 Phase 4"),
+            ("metadata", "File metadata analysis", "🔴 Phase 5"),
+            ("config", "Configuration management", "✅ Available"),
+            ("help", "Show this help", "✅ Available"),
+            ("quit", "Exit the program", "✅ Available"),
+        ]
+        
+        for cmd, desc, status in commands:
+            table.add_row(cmd, desc, status)
+        
+        console.print(table)
+    except ImportError:
+        show_simple_help()
+
+
+def show_simple_help() -> None:
+    """Show help in simple text format."""
+    print("\nAvailable Commands:")
+    print("  encrypt  - Encrypt files with symmetric algorithms (Available)")
+    print("  decrypt  - Decrypt files with symmetric algorithms (Available)")
+    print("  hash     - Generate file hashes (Phase 2)")
+    print("  crack    - Crack hash values (Phase 3)")
+    print("  stego    - Steganography operations (Phase 4)")
+    print("  metadata - File metadata analysis (Phase 5)")
+    print("  config   - Configuration management (Available)")
+    print("  help     - Show this help (Available)")
+    print("  quit     - Exit the program (Available)")
 
 
 def show_config_menu(console, config: ConfigManager) -> None:
-    """Show configuration menu."""
-    from rich.prompt import Prompt
-    
-    action = Prompt.ask(
-        "Configuration action",
-        choices=["show", "get", "set", "back"],
-        default="show"
-    )
+    """Show configuration menu with rich formatting."""
+    try:
+        from rich.prompt import Prompt
+        
+        action = Prompt.ask(
+            "Configuration action",
+            choices=["show", "get", "set", "back"],
+            default="show"
+        )
+        
+        if action == "back":
+            return
+        elif action == "show":
+            settings = config.get_all_settings()
+            console.print_json(data=settings)
+        elif action == "get":
+            key = Prompt.ask("Configuration key")
+            value = config.get_setting(key, "Not found")
+            console.print(f"[cyan]{key}[/cyan]: [white]{value}[/white]")
+        elif action == "set":
+            key = Prompt.ask("Configuration key")
+            value = Prompt.ask("Configuration value")
+            config.set_setting(key, value)
+            console.print(f"[green]Set {key} = {value}[/green]")
+    except ImportError:
+        show_simple_config_menu(config)
+
+
+def show_simple_config_menu(config: ConfigManager) -> None:
+    """Show configuration menu in simple text format."""
+    print("Configuration actions: show, get, set, back")
+    action = input("Action: ").strip().lower()
     
     if action == "back":
         return
     elif action == "show":
         settings = config.get_all_settings()
-        console.print_json(data=settings)
+        import json
+        print(json.dumps(settings, indent=2))
     elif action == "get":
-        key = Prompt.ask("Configuration key")
+        key = input("Configuration key: ").strip()
         value = config.get_setting(key, "Not found")
-        console.print(f"[cyan]{key}[/cyan]: [white]{value}[/white]")
+        print(f"{key}: {value}")
     elif action == "set":
-        key = Prompt.ask("Configuration key")
-        value = Prompt.ask("Configuration value")
+        key = input("Configuration key: ").strip()
+        value = input("Configuration value: ").strip()
         config.set_setting(key, value)
-        console.print(f"[green]Set {key} = {value}[/green]")
+        print(f"Set {key} = {value}")
+
+
+def handle_interactive_encrypt(console, config: ConfigManager, logger) -> None:
+    """Handle encryption in interactive mode with rich formatting."""
+    try:
+        from rich.prompt import Prompt
+        from pathlib import Path
+        from getpass import getpass
+        from ck.services.symmetric import SymmetricEncryptionService
+        
+        # Get input file
+        file_path = Prompt.ask("Enter file path to encrypt")
+        input_file = Path(file_path)
+        
+        if not input_file.exists():
+            console.print(f"[red]Error: File not found: {input_file}[/red]")
+            return
+        
+        # Initialize service and get algorithms
+        service = SymmetricEncryptionService()
+        available = service.get_available_algorithms()
+        
+        # Select algorithm
+        algorithm = Prompt.ask(
+            "Select algorithm",
+            choices=available,
+            default=available[0] if available else "aes-128"
+        )
+        
+        # Get password
+        console.print("Enter encryption password:")
+        password = getpass()
+        console.print("Confirm password:")
+        confirm = getpass()
+        
+        if password != confirm:
+            console.print("[red]Error: Passwords do not match.[/red]")
+            return
+        
+        # Perform encryption
+        console.print(f"Encrypting {input_file} with {algorithm}...")
+        encrypted_file, key_file_path = service.encrypt_file(
+            input_file=input_file,
+            algorithm=algorithm,
+            password=password
+        )
+        
+        console.print("[green]Encryption successful![/green]")
+        console.print(f"  Encrypted file: [cyan]{encrypted_file}[/cyan]")
+        console.print(f"  Key file: [cyan]{key_file_path}[/cyan]")
+        
+    except ImportError:
+        handle_simple_encrypt(config, logger)
+    except Exception as e:
+        logger.error(f"Interactive encryption failed: {e}")
+        console.print(f"[red]Error: {e}[/red]")
+
+
+def handle_simple_encrypt(config: ConfigManager, logger) -> None:
+    """Handle encryption in simple interactive mode."""
+    try:
+        from pathlib import Path
+        from getpass import getpass
+        from ck.services.symmetric import SymmetricEncryptionService
+        
+        # Get input file
+        file_path = input("Enter file path to encrypt: ").strip()
+        input_file = Path(file_path)
+        
+        if not input_file.exists():
+            print(f"Error: File not found: {input_file}")
+            return
+        
+        # Initialize service and get algorithms
+        service = SymmetricEncryptionService()
+        available = service.get_available_algorithms()
+        
+        # Select algorithm
+        print("Available algorithms:")
+        for i, algo in enumerate(available, 1):
+            print(f"  {i}. {algo}")
+        
+        while True:
+            try:
+                choice = input("Select algorithm (1-3): ").strip()
+                idx = int(choice) - 1
+                if 0 <= idx < len(available):
+                    algorithm = available[idx]
+                    break
+                else:
+                    print("Invalid choice. Please select 1-3.")
+            except ValueError:
+                print("Invalid input. Please enter a number.")
+        
+        # Get password
+        password = getpass("Enter encryption password: ")
+        confirm = getpass("Confirm password: ")
+        
+        if password != confirm:
+            print("Error: Passwords do not match.")
+            return
+        
+        # Perform encryption
+        print(f"Encrypting {input_file} with {algorithm}...")
+        encrypted_file, key_file_path = service.encrypt_file(
+            input_file=input_file,
+            algorithm=algorithm,
+            password=password
+        )
+        
+        print("Encryption successful!")
+        print(f"  Encrypted file: {encrypted_file}")
+        print(f"  Key file: {key_file_path}")
+        
+    except Exception as e:
+        logger.error(f"Simple encryption failed: {e}")
+        print(f"Error: {e}")
+
+
+def handle_interactive_decrypt(console, config: ConfigManager, logger) -> None:
+    """Handle decryption in interactive mode with rich formatting."""
+    try:
+        from rich.prompt import Prompt
+        from pathlib import Path
+        from ck.services.symmetric import SymmetricEncryptionService
+        
+        # Get input files
+        encrypted_path = Prompt.ask("Enter encrypted file path (.eck)")
+        encrypted_file = Path(encrypted_path)
+        
+        if not encrypted_file.exists():
+            console.print(f"[red]Error: Encrypted file not found: {encrypted_file}[/red]")
+            return
+        
+        key_path = Prompt.ask("Enter key file path")
+        key_file = Path(key_path)
+        
+        if not key_file.exists():
+            console.print(f"[red]Error: Key file not found: {key_file}[/red]")
+            return
+        
+        # Initialize service
+        service = SymmetricEncryptionService()
+        
+        # Perform decryption
+        console.print(f"Decrypting {encrypted_file}...")
+        decrypted_file = service.decrypt_file(
+            encrypted_file=encrypted_file,
+            key_file=key_file
+        )
+        
+        console.print("[green]Decryption successful![/green]")
+        console.print(f"  Decrypted file: [cyan]{decrypted_file}[/cyan]")
+        
+    except ImportError:
+        handle_simple_decrypt(config, logger)
+    except Exception as e:
+        logger.error(f"Interactive decryption failed: {e}")
+        console.print(f"[red]Error: {e}[/red]")
+
+
+def handle_simple_decrypt(config: ConfigManager, logger) -> None:
+    """Handle decryption in simple interactive mode."""
+    try:
+        from pathlib import Path
+        from ck.services.symmetric import SymmetricEncryptionService
+        
+        # Get input files
+        encrypted_path = input("Enter encrypted file path (.eck): ").strip()
+        encrypted_file = Path(encrypted_path)
+        
+        if not encrypted_file.exists():
+            print(f"Error: Encrypted file not found: {encrypted_file}")
+            return
+        
+        key_path = input("Enter key file path: ").strip()
+        key_file = Path(key_path)
+        
+        if not key_file.exists():
+            print(f"Error: Key file not found: {key_file}")
+            return
+        
+        # Initialize service
+        service = SymmetricEncryptionService()
+        
+        # Perform decryption
+        print(f"Decrypting {encrypted_file}...")
+        decrypted_file = service.decrypt_file(
+            encrypted_file=encrypted_file,
+            key_file=key_file
+        )
+        
+        print("Decryption successful!")
+        print(f"  Decrypted file: {decrypted_file}")
+        
+    except Exception as e:
+        logger.error(f"Simple decryption failed: {e}")
+        print(f"Error: {e}")
 
 
 def get_phase_number(command: str) -> int:
@@ -387,10 +663,14 @@ def main(argv: Optional[List[str]] = None) -> int:
             interactive_mode(config, logger)
         elif command == 'config':
             handle_config_command(args, config, logger)
+        elif command in ['encrypt', 'enc', 'e']:
+            handle_encrypt_command(args, config, logger)
+        elif command in ['decrypt', 'dec', 'd']:
+            handle_decrypt_command(args, config, logger)
         else:
             # For now, show that other commands are not implemented
             print(f"Command '{command}' is planned for a future phase.")
-            print("Currently available: interactive mode and config management.")
+            print("Currently available: encrypt, decrypt, interactive mode and config management.")
             return 1
         
         logger.info("CryptoKit (CK) shutting down")
@@ -424,6 +704,116 @@ def handle_config_command(args, config: ConfigManager, logger) -> None:
         config.save_config()
     else:
         print("Available config actions: show, get, set")
+
+
+def handle_encrypt_command(args, config: ConfigManager, logger) -> None:
+    """Handle encryption command."""
+    from pathlib import Path
+    from getpass import getpass
+    from ck.services.symmetric import SymmetricEncryptionService
+    
+    try:
+        # Initialize service
+        service = SymmetricEncryptionService()
+        
+        # Validate input file
+        input_file = Path(args.file)
+        if not input_file.exists():
+            print(f"Error: File not found: {input_file}")
+            return
+        
+        # Select algorithm
+        algorithm = args.algorithm
+        if not algorithm:
+            available = service.get_available_algorithms()
+            print("Available algorithms:")
+            for i, algo in enumerate(available, 1):
+                print(f"  {i}. {algo}")
+            
+            while True:
+                try:
+                    choice = input("Select algorithm (1-3): ").strip()
+                    idx = int(choice) - 1
+                    if 0 <= idx < len(available):
+                        algorithm = available[idx]
+                        break
+                    else:
+                        print("Invalid choice. Please select 1-3.")
+                except (ValueError, KeyboardInterrupt):
+                    print("\nOperation cancelled.")
+                    return
+        
+        # Get password if needed
+        password = args.password
+        key_file = Path(args.key_file) if args.key_file else None
+        
+        if not key_file:
+            if not password:
+                password = getpass("Enter encryption password: ")
+                confirm = getpass("Confirm password: ")
+                if password != confirm:
+                    print("Error: Passwords do not match.")
+                    return
+        
+        # Set output file
+        output_file = Path(args.output) if args.output else None
+        
+        # Perform encryption
+        print(f"Encrypting {input_file} with {algorithm}...")
+        encrypted_file, key_file_path = service.encrypt_file(
+            input_file=input_file,
+            algorithm=algorithm,
+            password=password,
+            key_file=key_file,
+            output_file=output_file
+        )
+        
+        print(f"Encryption successful!")
+        print(f"  Encrypted file: {encrypted_file}")
+        print(f"  Key file: {key_file_path}")
+        
+    except Exception as e:
+        logger.error(f"Encryption failed: {e}")
+        print(f"Error: {e}")
+
+
+def handle_decrypt_command(args, config: ConfigManager, logger) -> None:
+    """Handle decryption command."""
+    from pathlib import Path
+    from ck.services.symmetric import SymmetricEncryptionService
+    
+    try:
+        # Initialize service
+        service = SymmetricEncryptionService()
+        
+        # Validate input files
+        encrypted_file = Path(args.file)
+        if not encrypted_file.exists():
+            print(f"Error: Encrypted file not found: {encrypted_file}")
+            return
+        
+        key_file = Path(args.key_file)
+        if not key_file.exists():
+            print(f"Error: Key file not found: {key_file}")
+            return
+        
+        # Set output file
+        output_file = Path(args.output) if args.output else None
+        
+        # Perform decryption
+        print(f"Decrypting {encrypted_file}...")
+        decrypted_file = service.decrypt_file(
+            encrypted_file=encrypted_file,
+            key_file=key_file,
+            output_file=output_file
+        )
+        
+        print(f"Decryption successful!")
+        print(f"  Decrypted file: {decrypted_file}")
+        
+    except Exception as e:
+        logger.error(f"Decryption failed: {e}")
+        print(f"Error: {e}")
 
 
 if __name__ == "__main__":

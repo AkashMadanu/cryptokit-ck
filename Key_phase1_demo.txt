@@ -1,0 +1,10 @@
+# CryptoKit (CK) Key File
+# Algorithm: aes-128
+# Created: 2025-09-03T21:50:40.514392
+# Source File: phase1_demo.txt
+#
+ALGORITHM=aes-128
+KEY=0f3f4f0a56034ba7e428956134406687
+SALT=40bac893cf7f4569ef264403abfc4317
+CREATED=2025-09-03T21:50:40.514392
+SOURCE_FILE=phase1_demo.txt
