@@ -31,7 +31,7 @@ Phase 1 of CryptoKit (CK) has been successfully completed, delivering a fully fu
 - **Hex Serialization**: Human-readable key storage format
 
 ### 📁 File Operations
-- **Single File Encryption**: Encrypt any file type with .eck extension
+- **Single File Encryption**: Encrypt any file type with .txt extension
 - **File Decryption**: Restore original files from encrypted format
 - **Input Validation**: Comprehensive file existence and permission checks
 - **Output Management**: Configurable output paths and automatic naming
@@ -39,7 +39,7 @@ Phase 1 of CryptoKit (CK) has been successfully completed, delivering a fully fu
 
 ### 💻 Command Line Interface
 - **Encrypt Command**: `ck encrypt file.txt --algorithm aes-128 --password mypass`
-- **Decrypt Command**: `ck decrypt file.txt.eck --key-file Key_file.txt`
+- **Decrypt Command**: `ck decrypt file.txt.txt --key-file Key_file.txt`
 - **Algorithm Selection**: Choice between AES-128 and 3DES
 - **Interactive Mode**: Menu-driven interface for user-friendly operation
 - **Help System**: Comprehensive help and usage information
@@ -76,14 +76,14 @@ ck encrypt document.txt --algorithm aes-128 --password "mySecurePassword123"
 
 # Output:
 # Encryption successful!
-#   Encrypted file: document.txt.eck
+#   Encrypted file: document.txt.txt
 #   Key file: Key_document.txt
 ```
 
 ### Decryption Example
 ```bash
 # Decrypt the file
-ck decrypt document.txt.eck --key-file Key_document.txt
+ck decrypt document.txt.txt --key-file Key_document.txt
 
 # Output:
 # Decryption successful!

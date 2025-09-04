@@ -106,7 +106,7 @@ def create_parser() -> argparse.ArgumentParser:
     )
     encrypt_parser.add_argument(
         "--output", "-o",
-        help="Output file path (default: input_file.eck)"
+        help="Output file path (default: input_file.txt)"
     )
     encrypt_parser.add_argument(
         "--password", "-p",
@@ -125,7 +125,7 @@ def create_parser() -> argparse.ArgumentParser:
     )
     decrypt_parser.add_argument(
         "file",
-        help="Encrypted file to decrypt (.eck)"
+        help="Encrypted file to decrypt (.txt)"
     )
     decrypt_parser.add_argument(
         "--key-file", "-k",
@@ -134,7 +134,7 @@ def create_parser() -> argparse.ArgumentParser:
     )
     decrypt_parser.add_argument(
         "--output", "-o", 
-        help="Output file path (default: remove .eck extension)"
+        help="Output file path (default: remove .txt extension)"
     )
     
     # Hashing commands
@@ -542,7 +542,7 @@ def handle_interactive_decrypt(console, config: ConfigManager, logger) -> None:
         from ck.services.symmetric import SymmetricEncryptionService
         
         # Get input files
-        encrypted_path = Prompt.ask("Enter encrypted file path (.eck)")
+        encrypted_path = Prompt.ask("Enter encrypted file path (.txt)")
         encrypted_file = Path(encrypted_path)
         
         if not encrypted_file.exists():
@@ -583,7 +583,7 @@ def handle_simple_decrypt(config: ConfigManager, logger) -> None:
         from ck.services.symmetric import SymmetricEncryptionService
         
         # Get input files
-        encrypted_path = input("Enter encrypted file path (.eck): ").strip()
+        encrypted_path = input("Enter encrypted file path (.txt): ").strip()
         encrypted_file = Path(encrypted_path)
         
         if not encrypted_file.exists():

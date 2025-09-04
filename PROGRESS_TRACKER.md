@@ -94,7 +94,7 @@
 
 #### File Operations (100%)
 - [x] Single file encryption/decryption
-- [x] Custom .eck file extension for encrypted files
+- [x] Custom .txt file extension for encrypted files
 - [x] Automatic key file generation (Key_filename.txt format)
 - [x] Input/output file validation
 - [x] Error handling for file operations

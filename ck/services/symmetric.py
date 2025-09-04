@@ -53,7 +53,7 @@ class SymmetricEncryptionService:
             algorithm: Algorithm name (des, 3des, aes-128)
             password: Password for key derivation (if key_file not provided)
             key_file: Path to existing key file
-            output_file: Path for encrypted output (default: input_file.eck)
+            output_file: Path for encrypted output (default: input_file.txt)
             
         Returns:
             Tuple of (encrypted_file_path, key_file_path)
@@ -68,7 +68,7 @@ class SymmetricEncryptionService:
             
             # Set default output file
             if output_file is None:
-                output_file = input_file.with_suffix(input_file.suffix + '.eck')
+                output_file = input_file.with_suffix(input_file.suffix + '.txt')
             
             # Get algorithm instance
             algo_class = get_algorithm(algorithm)
@@ -126,9 +126,9 @@ class SymmetricEncryptionService:
         Decrypt a file using the provided key.
         
         Args:
-            encrypted_file: Path to encrypted file (.eck)
+            encrypted_file: Path to encrypted file (.txt)
             key_file: Path to key file
-            output_file: Path for decrypted output (default: remove .eck extension)
+            output_file: Path for decrypted output (default: remove .txt extension)
             
         Returns:
             Path to decrypted file
@@ -146,7 +146,7 @@ class SymmetricEncryptionService:
             
             # Set default output file
             if output_file is None:
-                if encrypted_file.suffix == '.eck':
+                if encrypted_file.suffix == '.txt':
                     output_file = encrypted_file.with_suffix('')
                 else:
                     output_file = encrypted_file.with_suffix('.decrypted')
