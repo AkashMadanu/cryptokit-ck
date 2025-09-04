@@ -190,25 +190,26 @@ def create_parser() -> argparse.ArgumentParser:
     )
     
     # Steganography commands
-    stego_parser = subparsers.add_parser(
-        "stego",
-        help="Steganography operations"
+    hide_parser = subparsers.add_parser(
+        "hide",
+        help="Hide data in files using steganography"
     )
-    stego_subparsers = stego_parser.add_subparsers(
-        dest="stego_action",
-        help="Steganography actions"
-    )
-    
-    hide_parser = stego_subparsers.add_parser("hide", help="Hide data in file")
-    hide_parser.add_argument("cover_file", help="Cover file")
+    hide_parser.add_argument("cover_file", help="Cover file (image, text, etc.)")
     hide_parser.add_argument("secret_file", help="File containing secret data")
-    hide_parser.add_argument("output_file", help="Output file")
+    hide_parser.add_argument("output_file", help="Output file with hidden data")
     hide_parser.add_argument("--password", "-p", help="Password for encryption")
+    hide_parser.add_argument("--method", "-m", choices=["lsb", "text", "binary"], 
+                             default="lsb", help="Steganography method (default: lsb)")
     
-    extract_parser = stego_subparsers.add_parser("extract", help="Extract hidden data")
+    extract_parser = subparsers.add_parser(
+        "extract", 
+        help="Extract hidden data from steganography files"
+    )
     extract_parser.add_argument("stego_file", help="File containing hidden data")
     extract_parser.add_argument("--output", "-o", help="Output file for extracted data")
     extract_parser.add_argument("--password", "-p", help="Password for decryption")
+    extract_parser.add_argument("--method", "-m", choices=["lsb", "text", "binary"], 
+                                help="Steganography method (auto-detect if not specified)")
     
     # Metadata commands
     meta_parser = subparsers.add_parser(
@@ -264,7 +265,7 @@ def interactive_mode(config: ConfigManager, logger) -> None:
                     "\n[bold green]CK[/bold green]",
                     choices=[
                         "encrypt", "decrypt", "hash", "crack", 
-                        "stego", "metadata", "config", "help", "quit"
+                        "hide", "extract", "metadata", "config", "help", "quit"
                     ],
                     default="help"
                 )
@@ -334,9 +335,10 @@ def show_interactive_help(console) -> None:
         commands = [
             ("encrypt", "Encrypt files with symmetric algorithms", "✅ Available"),
             ("decrypt", "Decrypt files with symmetric algorithms", "✅ Available"),
-            ("hash", "Generate file hashes", "🔴 Phase 2"),
+            ("hash", "Generate file hashes", "✅ Available"),
             ("crack", "Crack hash values", "🔴 Phase 3"),
-            ("stego", "Steganography operations", "🔴 Phase 4"),
+            ("hide", "Hide data in files", "🔴 Phase 4"),
+            ("extract", "Extract hidden data", "🔴 Phase 4"),
             ("metadata", "File metadata analysis", "🔴 Phase 5"),
             ("config", "Configuration management", "✅ Available"),
             ("help", "Show this help", "✅ Available"),
@@ -356,9 +358,10 @@ def show_simple_help() -> None:
     print("\nAvailable Commands:")
     print("  encrypt  - Encrypt files with symmetric algorithms (Available)")
     print("  decrypt  - Decrypt files with symmetric algorithms (Available)")
-    print("  hash     - Generate file hashes (Phase 2)")
+    print("  hash     - Generate file hashes (Available)")
     print("  crack    - Crack hash values (Phase 3)")
-    print("  stego    - Steganography operations (Phase 4)")
+    print("  hide     - Hide data in files (Phase 4)")
+    print("  extract  - Extract hidden data (Phase 4)")
     print("  metadata - File metadata analysis (Phase 5)")
     print("  config   - Configuration management (Available)")
     print("  help     - Show this help (Available)")
@@ -620,7 +623,7 @@ def get_phase_number(command: str) -> int:
         "encrypt": 1, "decrypt": 1,
         "hash": 2,
         "crack": 3,
-        "stego": 4,
+        "hide": 4, "extract": 4,
         "metadata": 5
     }
     return phase_map.get(command, 1)
