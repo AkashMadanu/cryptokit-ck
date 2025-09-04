@@ -140,7 +140,8 @@ def create_parser() -> argparse.ArgumentParser:
     # Hashing commands
     hash_parser = subparsers.add_parser(
         "hash",
-        help="Generate hashes of files or directories"
+        help="Generate hashes of files or directories",
+        aliases=["h"]
     )
     hash_parser.add_argument(
         "target",
@@ -148,16 +149,14 @@ def create_parser() -> argparse.ArgumentParser:
     )
     hash_parser.add_argument(
         "--algorithm", "-a",
+        choices=["md5", "sha1", "sha256", "sha384", "sha512", "blake2b", "blake2s"],
         default="sha256",
         help="Hash algorithm (default: sha256)"
     )
     hash_parser.add_argument(
-        "--output", "-o",
-        help="Output file for hash results"
-    )
-    hash_parser.add_argument(
-        "--verify",
-        help="Hash file to verify against"
+        "--no-save",
+        action="store_true",
+        help="Don't save hash to file (print only)"
     )
     
     # Hash cracking commands
@@ -667,10 +666,12 @@ def main(argv: Optional[List[str]] = None) -> int:
             handle_encrypt_command(args, config, logger)
         elif command in ['decrypt', 'dec', 'd']:
             handle_decrypt_command(args, config, logger)
+        elif command in ['hash', 'h']:
+            handle_hash_command(args, config, logger)
         else:
             # For now, show that other commands are not implemented
             print(f"Command '{command}' is planned for a future phase.")
-            print("Currently available: encrypt, decrypt, interactive mode and config management.")
+            print("Currently available: encrypt, decrypt, hash, interactive mode and config management.")
             return 1
         
         logger.info("CryptoKit (CK) shutting down")
@@ -813,6 +814,54 @@ def handle_decrypt_command(args, config: ConfigManager, logger) -> None:
         
     except Exception as e:
         logger.error(f"Decryption failed: {e}")
+        print(f"Error: {e}")
+
+
+def handle_hash_command(args, config: ConfigManager, logger) -> None:
+    """Handle hash command."""
+    from pathlib import Path
+    from ck.services.hashing import HashingService
+    
+    try:
+        # Initialize service
+        service = HashingService()
+        
+        # Validate target path
+        target_path = Path(args.target)
+        if not target_path.exists():
+            print(f"Error: Target not found: {target_path}")
+            return
+        
+        # Determine if target is file or directory
+        if target_path.is_file():
+            print(f"Hashing file {target_path} with {args.algorithm.upper()}...")
+            hash_value, hash_file_path = service.hash_file(
+                file_path=target_path,
+                algorithm=args.algorithm,
+                save_to_file=not args.no_save
+            )
+            
+            print(f"{args.algorithm.upper()}: {hash_value}")
+            if not args.no_save:
+                print(f"Hash saved to: {hash_file_path}")
+                
+        elif target_path.is_dir():
+            print(f"Hashing directory {target_path} with {args.algorithm.upper()}...")
+            hash_value, hash_file_path = service.hash_directory(
+                dir_path=target_path,
+                algorithm=args.algorithm,
+                save_to_file=not args.no_save
+            )
+            
+            print(f"{args.algorithm.upper()}: {hash_value}")
+            if not args.no_save:
+                print(f"Hash saved to: {hash_file_path}")
+        else:
+            print(f"Error: Target is neither a file nor a directory: {target_path}")
+            return
+        
+    except Exception as e:
+        logger.error(f"Hashing failed: {e}")
         print(f"Error: {e}")
 
 
