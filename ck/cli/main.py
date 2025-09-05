@@ -162,7 +162,7 @@ def create_parser() -> argparse.ArgumentParser:
     # Hash cracking commands
     crack_parser = subparsers.add_parser(
         "crack",
-        help="Crack hashes using external tools"
+        help="Crack and analyze hashes (built-in simple engine)"
     )
     crack_parser.add_argument(
         "hash_value",
@@ -173,20 +173,29 @@ def create_parser() -> argparse.ArgumentParser:
         help="Hash type (auto-detect if not specified)"
     )
     crack_parser.add_argument(
-        "--tool",
-        choices=["john", "hashcat", "auto"],
-        default="auto",
-        help="Cracking tool to use (default: auto)"
-    )
-    crack_parser.add_argument(
         "--wordlist", "-w",
-        help="Wordlist file to use"
+        help="Custom wordlist file to use"
     )
     crack_parser.add_argument(
-        "--attack-mode", "-m",
-        choices=["dictionary", "brute", "hybrid"],
-        default="dictionary",
-        help="Attack mode (default: dictionary)"
+        "--max-length", "-L",
+        type=int,
+        default=6,
+        help="Max brute force length (default: 6)"
+    )
+    crack_parser.add_argument(
+        "--quick",
+        action="store_true",
+        help="Quick mode (top common passwords only)"
+    )
+    crack_parser.add_argument(
+        "--detect",
+        action="store_true",
+        help="Detect hash type only (no cracking)"
+    )
+    crack_parser.add_argument(
+        "--analyze",
+        action="store_true",
+        help="Full analysis (detection + strength assessment)"
     )
     
     # Steganography commands
@@ -214,22 +223,64 @@ def create_parser() -> argparse.ArgumentParser:
     # Metadata commands
     meta_parser = subparsers.add_parser(
         "metadata",
-        help="Extract and analyze file metadata",
+        help="Analyze file metadata, content, and security indicators",
         aliases=["meta"]
     )
     meta_parser.add_argument(
-        "target",
-        help="File or directory to analyze"
+        "path",
+        help="Path to file or directory to analyze"
     )
     meta_parser.add_argument(
-        "--output", "-o",
-        help="Output file for metadata report"
+        "--recursive", "-r",
+        action="store_true",
+        help="Analyze directory recursively"
+    )
+    meta_parser.add_argument(
+        "--no-content",
+        action="store_true", 
+        help="Skip content analysis"
+    )
+    meta_parser.add_argument(
+        "--no-security",
+        action="store_true",
+        help="Skip security scanning"
     )
     meta_parser.add_argument(
         "--format",
-        choices=["json", "yaml", "table"],
-        default="table",
-        help="Output format (default: table)"
+        choices=["json", "summary", "detailed", "csv"],
+        default="summary",
+        help="Output format (default: summary)"
+    )
+    meta_parser.add_argument(
+        "--output", "-o",
+        help="Save results to file"
+    )
+    meta_parser.add_argument(
+        "--max-size",
+        type=int,
+        default=100,
+        help="Maximum file size to analyze in MB (default: 100)"
+    )
+    meta_parser.add_argument(
+        "--max-files",
+        type=int,
+        default=100,
+        help="Maximum files to analyze in directory (default: 100)"
+    )
+    meta_parser.add_argument(
+        "--pattern",
+        default="*",
+        help="File pattern for directory analysis (default: *)"
+    )
+    meta_parser.add_argument(
+        "--show-strings",
+        action="store_true",
+        help="Include string analysis in detailed output"
+    )
+    meta_parser.add_argument(
+        "--risk-only",
+        action="store_true",
+        help="Show only files with security risks"
     )
     
     return parser
@@ -333,16 +384,16 @@ def show_interactive_help(console) -> None:
         table.add_column("Status", style="green")
         
         commands = [
-            ("encrypt", "Encrypt files with symmetric algorithms", "✅ Available"),
-            ("decrypt", "Decrypt files with symmetric algorithms", "✅ Available"),
-            ("hash", "Generate file hashes", "✅ Available"),
-            ("crack", "Crack hash values", "🔴 Phase 3"),
-            ("hide", "Hide data in files", "🔴 Phase 4"),
-            ("extract", "Extract hidden data", "🔴 Phase 4"),
-            ("metadata", "File metadata analysis", "🔴 Phase 5"),
-            ("config", "Configuration management", "✅ Available"),
-            ("help", "Show this help", "✅ Available"),
-            ("quit", "Exit the program", "✅ Available"),
+            ("encrypt", "Encrypt files with symmetric algorithms", "Available"),
+            ("decrypt", "Decrypt files with symmetric algorithms", "Available"),
+            ("hash", "Generate file hashes", "Available"),
+            ("crack", "Crack & analyze hashes", "Available"),
+            ("hide", "Hide data in files", "Available"),
+            ("extract", "Extract hidden data", "Available"),
+            ("metadata", "File metadata analysis", "Phase 5"),
+            ("config", "Configuration management", "Available"),
+            ("help", "Show this help", "Available"),
+            ("quit", "Exit the program", "Available"),
         ]
         
         for cmd, desc, status in commands:
@@ -359,9 +410,9 @@ def show_simple_help() -> None:
     print("  encrypt  - Encrypt files with symmetric algorithms (Available)")
     print("  decrypt  - Decrypt files with symmetric algorithms (Available)")
     print("  hash     - Generate file hashes (Available)")
-    print("  crack    - Crack hash values (Phase 3)")
-    print("  hide     - Hide data in files (Phase 4)")
-    print("  extract  - Extract hidden data (Phase 4)")
+    print("  crack    - Crack & analyze hashes (Available)")
+    print("  hide     - Hide data in files (Available)")
+    print("  extract  - Extract hidden data (Available)")
     print("  metadata - File metadata analysis (Phase 5)")
     print("  config   - Configuration management (Available)")
     print("  help     - Show this help (Available)")
@@ -671,10 +722,18 @@ def main(argv: Optional[List[str]] = None) -> int:
             handle_decrypt_command(args, config, logger)
         elif command in ['hash', 'h']:
             handle_hash_command(args, config, logger)
+        elif command == 'crack':
+            handle_crack_command(args, config, logger)
+        elif command == 'hide':
+            handle_hide_command(args, config, logger)
+        elif command == 'extract':
+            handle_extract_command(args, config, logger)
+        elif command in ['metadata', 'meta']:
+            handle_metadata_command(args, config, logger)
         else:
             # For now, show that other commands are not implemented
             print(f"Command '{command}' is planned for a future phase.")
-            print("Currently available: encrypt, decrypt, hash, interactive mode and config management.")
+            print("Currently available: encrypt, decrypt, hash, crack, hide, extract, metadata, interactive mode and config management.")
             return 1
         
         logger.info("CryptoKit (CK) shutting down")
@@ -865,6 +924,228 @@ def handle_hash_command(args, config: ConfigManager, logger) -> None:
         
     except Exception as e:
         logger.error(f"Hashing failed: {e}")
+        print(f"Error: {e}")
+
+
+def handle_crack_command(args, config: ConfigManager, logger) -> None:
+    """Handle crack command using simplified built-in engine."""
+    from ck.services.cracking import CrackingService
+    try:
+        service = CrackingService()
+
+        # Detection only
+        if getattr(args, 'detect', False):
+            print(f"Analyzing hash: {args.hash_value}")
+            result = service.detect_only(args.hash_value)
+            if result['is_valid_hash']:
+                print(f"Hash Type: {result['most_likely_type'].upper()}")
+                print(f"Description: {result['description']}")
+                print(f"Confidence: {result['confidence']:.1%}")
+                if len(result['all_possibilities']) > 1:
+                    print("\nOther possibilities:")
+                    for alt in result['all_possibilities'][1:]:
+                        print(f"  - {alt['type'].upper()}: {alt['confidence']:.1%}")
+            else:
+                print("Unable to detect hash type (no pattern match)")
+            return
+
+        # Full analysis
+        if getattr(args, 'analyze', False):
+            print(f"Performing comprehensive analysis of: {args.hash_value}")
+            analysis = service.analyze_hash(args.hash_value)
+            det = analysis['detection']['most_likely']
+            print("\nDetection")
+            print(f"Type: {det['type'].upper()} ({det['bit_length']} bits)")
+            print(f"Description: {det['description']}")
+            print(f"Confidence: {det['confidence']:.1%}")
+            strength = analysis['strength_analysis']
+            print("\nSecurity")
+            print(f"Algorithm Rating: {strength['algorithm_security']['rating']}")
+            print(f"Overall Rating: {strength['overall_rating']['rating']} ({strength['overall_rating']['score']}/10)")
+            print(f"Crack Difficulty: {strength['crack_difficulty']['difficulty']}")
+            print(f"Estimated Time: {strength['crack_difficulty']['time_estimate']}")
+            vulns = strength['algorithm_security']['vulnerabilities']
+            if vulns:
+                print("\nVulnerabilities:")
+                for v in vulns:
+                    print(f"  - {v}")
+            recs = strength['recommendations']
+            if recs:
+                print("\nRecommendations:")
+                for r in recs:
+                    print(f"  {r}")
+            return
+
+        # Crack attempt
+        quick_mode = getattr(args, 'quick', False)
+        if quick_mode:
+            print("Quick mode: top common passwords only")
+            result = service.quick_crack(args.hash_value)
+        else:
+            result = service.attempt_crack(
+                hash_value=args.hash_value,
+                hash_type=getattr(args, 'type', None),
+                wordlist_file=getattr(args, 'wordlist', None),
+                max_brute_length=getattr(args, 'max_length', 6),
+                quick_mode=False
+            )
+
+        if result['success']:
+            print("\nHash cracked!")
+            print(f"Password: {result['result']['password']}")
+            print(f"Method: {result['method_used'].replace('_',' ').title()}")
+            print(f"Hash Type: {result['hash_type'].upper()}")
+        else:
+            print(f"\n{result['message']}")
+            if 'suggestions' in result:
+                print("\nSuggestions:")
+                for s in result['suggestions']:
+                    print(f"  - {s}")
+    except Exception as e:
+        logger.error(f"Cracking failed: {e}")
+        print(f"Error: {e}")
+
+
+def handle_hide_command(args, config: ConfigManager, logger) -> None:
+    """Handle hide (steganography) command."""
+    from pathlib import Path
+    from ck.services.steganography import SteganographyService
+    
+    try:
+        # Initialize service
+        service = SteganographyService()
+        
+        # Validate input files
+        cover_file = Path(args.cover_file)
+        if not cover_file.exists():
+            print(f"Error: Cover file not found: {cover_file}")
+            return
+        
+        secret_file = Path(args.secret_file)
+        if not secret_file.exists():
+            print(f"Error: Secret file not found: {secret_file}")
+            return
+        
+        output_file = Path(args.output_file)
+        
+        # Show capacity analysis first
+        print(f"Analyzing cover file capacity...")
+        capacity_info = service.analyze_capacity(
+            cover_file=cover_file,
+            method=args.method
+        )
+        
+        print(f"Cover file: {capacity_info['file']}")
+        print(f"Method: {capacity_info['algorithm']}")
+        print(f"Capacity: {capacity_info['capacity_bytes']} bytes ({capacity_info['capacity_kb']} KB)")
+        print(f"File usage: {capacity_info['capacity_percentage']}%")
+        
+        # Check secret file size
+        secret_size = secret_file.stat().st_size
+        print(f"Secret file size: {secret_size} bytes")
+        
+        if secret_size > capacity_info['capacity_bytes']:
+            print(f"Error: Secret file too large. Maximum capacity: {capacity_info['capacity_bytes']} bytes")
+            return
+        
+        # Perform hiding
+        print(f"Hiding {secret_file} in {cover_file}...")
+        success = service.hide_data(
+            cover_file=cover_file,
+            secret_file=secret_file,
+            output_file=output_file,
+            method=args.method,
+            password=args.password
+        )
+        
+        if success:
+            print(f"Data hiding successful!")
+            print(f"  Output file: {output_file}")
+            print(f"  Hidden data: {secret_size} bytes")
+            if args.password:
+                print(f"  Encryption: Yes (password protected)")
+            else:
+                print(f"  Encryption: No")
+        
+    except Exception as e:
+        logger.error(f"Data hiding failed: {e}")
+        print(f"Error: {e}")
+
+
+def handle_extract_command(args, config: ConfigManager, logger) -> None:
+    """Handle extract (steganography) command."""
+    from pathlib import Path
+    from ck.services.steganography import SteganographyService
+    
+    try:
+        # Initialize service
+        service = SteganographyService()
+        
+        # Validate input file
+        stego_file = Path(args.stego_file)
+        if not stego_file.exists():
+            print(f"Error: Steganography file not found: {stego_file}")
+            return
+        
+        # Set output file
+        output_file = Path(args.output) if args.output else None
+        
+        # Perform extraction
+        print(f"Extracting hidden data from {stego_file}...")
+        result = service.extract_data(
+            stego_file=stego_file,
+            output_file=output_file,
+            method=args.method,
+            password=args.password
+        )
+        
+        if isinstance(result, Path):
+            # Data was saved to file
+            extracted_size = result.stat().st_size
+            print(f"Data extraction successful!")
+            print(f"  Extracted file: {result}")
+            print(f"  Extracted data: {extracted_size} bytes")
+        else:
+            # Data returned as bytes
+            print(f"Data extraction successful!")
+            print(f"  Extracted data: {len(result)} bytes")
+            
+            # If no output file specified, try to show as text if possible
+            if not output_file:
+                try:
+                    text_data = result.decode('utf-8')
+                    if len(text_data) <= 500:  # Only show if reasonably short
+                        print(f"  Content preview: {text_data[:200]}{'...' if len(text_data) > 200 else ''}")
+                except UnicodeDecodeError:
+                    print(f"  Content: Binary data (use --output to save to file)")
+        
+        if args.password:
+            print(f"  Decryption: Yes (password used)")
+        else:
+            print(f"  Decryption: No")
+        
+    except Exception as e:
+        logger.error(f"Data extraction failed: {e}")
+        print(f"Error: {e}")
+
+
+def handle_metadata_command(args, config: ConfigManager, logger) -> None:
+    """Handle metadata analysis command."""
+    from ck.commands.metadata import MetadataCommand
+    
+    try:
+        # Initialize command
+        command = MetadataCommand()
+        command.logger = logger
+        
+        # Execute command
+        result = command.execute(args)
+        
+        if result != 0:
+            logger.error("Metadata analysis failed")
+        
+    except Exception as e:
+        logger.error(f"Metadata analysis failed: {e}")
         print(f"Error: {e}")
 
 

@@ -79,9 +79,29 @@ Thumbs.db
 config/local.yaml
 config/user.yaml
 
-# Test files
+# Test files and outputs
 test_data/
 test_output/
+*.txt
+!requirements.txt
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.csv
+Key_*
+*Hash.txt
+*_decrypted.*
+*_encrypted.*
+encrypted_*
+decrypted_*
+extracted_*
+hidden_*
+demo_*
+test_*
+phase*_*
+secret_*
+suspicious_*
 
 # Wordlists (too large for repo)
 wordlists/

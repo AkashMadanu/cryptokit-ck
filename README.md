@@ -1,219 +1,635 @@
-# CryptoKit (CK) - Cryptography Toolkit
+# CryptoKit (CK)
 
-[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Linux-orange.svg)](https://linux.org)
+A comprehensive cryptography toolkit for encryption, hashing, steganography, and file security analysis.
 
-**CryptoKit (CK)** is a comprehensive, modular cryptography toolkit designed to showcase cryptographic fundamentals through practical implementations. Built for Linux systems, it provides a unified CLI interface for encryption, hashing, hash analysis, steganography, and file metadata analysis.
+[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://python.org)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/status-stable-brightgreen.svg)]()
 
-## Project Goals
+## Table of Contents
 
-This project demonstrates:
-- **Symmetric Encryption**: Multiple algorithms with secure key management
-- **Cryptographic Hashing**: File integrity and verification systems
-- **Hash Analysis**: Automated detection and cracking integration
-- **Steganography**: Data hiding in various file formats
-- **File Analysis**: Comprehensive metadata extraction and security analysis
-
-## Architecture
-
-CryptoKit follows a modular, plugin-based architecture that emphasizes:
-- **Flexibility**: Easy to add new algorithms and tools
-- **Extensibility**: Plugin system for custom functionality
-- **Maintainability**: Clean separation of concerns
-- **Security**: Secure coding practices throughout
-
-## Project Structure
-
-```
-CryptoKit/
-├── ck/                     # Main package
-│   ├── core/              # Core framework (config, logging, interfaces)
-│   ├── encryption/        # Symmetric encryption module
-│   ├── hashing/           # Hashing and verification
-│   ├── cracking/          # Hash analysis and cracking
-│   ├── steganography/     # Data hiding techniques
-│   ├── metadata/          # File analysis and metadata
-│   └── cli/               # Command-line interface
-├── tests/                 # Comprehensive test suite
-├── config/                # Configuration files
-├── docs/                  # Documentation
-└── scripts/               # Utility scripts
-```
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Commands](#commands)
+- [Examples](#examples)
+- [Configuration](#configuration)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Features
 
-### Phase 1: Symmetric Encryption (Complete)
-- **Multiple Algorithms**: AES, ChaCha20, Blowfish, 3DES
-- **Secure Key Derivation**: PBKDF2, Argon2 support
-- **File & Directory Encryption**: Single files or entire directories
-- **Integrity Protection**: HMAC verification included
-
-### Phase 2: Hashing & Verification (In Progress)
-- **Multiple Hash Algorithms**: SHA family, Blake2, MD5, CRC32
-- **Batch Processing**: Efficient handling of multiple files
-- **Integrity Verification**: Compare against known hash values
-- **Merkle Tree Support**: Directory integrity verification
-
-### Phase 3: Hash Analysis (Planned)
-- **Automatic Hash Detection**: Pattern-based identification
-- **External Tool Integration**: John the Ripper, Hashcat
-- **Time Estimation**: Cracking time predictions
-- **Multiple Attack Modes**: Dictionary, brute force, hybrid
-
-### Phase 4: Steganography (Planned)
-- **Image Steganography**: LSB, DCT-based techniques
-- **Text Hiding**: Whitespace, Unicode methods
-- **Binary Support**: Hide data in various file formats
-- **Encryption Integration**: Encrypt before hiding
-
-### Phase 5: File Analysis (Planned)
-- **Metadata Extraction**: Comprehensive file information
-- **Content Analysis**: Entropy, pattern detection
-- **Security Scanning**: Suspicious content identification
-- **Multiple Output Formats**: JSON, CSV, human-readable
+- **Symmetric Encryption**: AES-128, 3DES encryption with secure key derivation
+- **Cryptographic Hashing**: MD5, SHA1, SHA256, SHA512, BLAKE2 support
+- **Hash Analysis**: Built-in dictionary-based hash cracking and analysis
+- **Steganography**: Hide and extract data in images using LSB techniques
+- **File Metadata Analysis**: Security scanning and threat detection
+- **Interactive CLI**: User-friendly command-line interface
+- **Multiple Output Formats**: JSON, CSV, detailed reports
 
 ## Installation
 
 ### Prerequisites
+
+**Linux (Ubuntu/Debian):**
 ```bash
-# Install system dependencies (Ubuntu/Debian)
 sudo apt update
-sudo apt install python3-dev python3-pip libmagic1
-
-# Install external tools (optional for hash cracking)
-sudo apt install john hashcat
-
-# For steganography (image processing)
-sudo apt install libjpeg-dev libpng-dev
+sudo apt install python3 python3-pip python3-venv git
 ```
 
-### Setup
+**Linux (CentOS/RHEL):**
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/cryptokit.git
-cd cryptokit
+sudo yum install python3 python3-pip git
+# or for newer versions:
+sudo dnf install python3 python3-pip git
+```
 
-# Install Python dependencies
+### Install CryptoKit
+
+1. **Clone the repository:**
+```bash
+git clone https://github.com/AkashMadanu/cryptokit-ck.git
+cd cryptokit-ck
+```
+
+2. **Create virtual environment (recommended):**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+3. **Install using automated script:**
+```bash
+python3 install.py
+```
+
+**Or install manually:**
+```bash
 pip install -r requirements.txt
-
-# Install CryptoKit
 pip install -e .
+```
 
-# Verify installation
+4. **Verify installation:**
+```bash
 ck --version
+ck --help
 ```
 
 ## Quick Start
 
-### Interactive Mode
 ```bash
-# Start interactive menu
-ck
+# Start interactive mode
+ck interactive
 
-# Or use specific commands
-ck encrypt --file document.pdf --algorithm aes-256-gcm
-ck hash --directory /path/to/files --algorithm sha256
-ck crack --hash "5d41402abc4b2a76b9719d911017c592" --auto-detect
+# Encrypt a file
+ck encrypt document.txt --algorithm aes-128
+
+# Generate file hash
+ck hash file.txt --algorithm sha256
+
+# Analyze file metadata
+ck metadata suspicious_file.exe --format detailed
+
+# Hide data in image
+ck hide cover.jpg secret.txt output.jpg
 ```
 
-### Configuration
+## Commands
+
+### Global Options
+
 ```bash
-# View current configuration
+ck [COMMAND] [OPTIONS]
+
+Global Options:
+  --version                 Show version information
+  --config FILE            Use custom configuration file
+  --log-level LEVEL        Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  --quiet                  Suppress console output
+  -h, --help               Show help message
+```
+
+### Available Commands
+
+- [`encrypt`](#encrypt) - Encrypt files using symmetric algorithms
+- [`decrypt`](#decrypt) - Decrypt files using symmetric algorithms  
+- [`hash`](#hash) - Generate hashes of files or directories
+- [`crack`](#crack) - Crack and analyze hashes
+- [`hide`](#hide) - Hide data in files using steganography
+- [`extract`](#extract) - Extract hidden data from files
+- [`metadata`](#metadata) - Analyze file metadata and security
+- [`config`](#config) - Manage configuration settings
+- [`interactive`](#interactive) - Start interactive mode
+
+## Examples
+
+### Encrypt
+
+Encrypt files using symmetric encryption algorithms.
+
+```bash
+# Basic encryption with password prompt
+ck encrypt document.pdf --algorithm aes-128
+
+# Encrypt with specified password (not recommended for production)
+ck encrypt file.txt --algorithm 3des --password mypassword
+
+# Encrypt with custom output file
+ck encrypt data.txt --algorithm aes-128 --output encrypted_data.txt
+
+# Use existing key file
+ck encrypt file.txt --algorithm aes-128 --key-file existing_key.txt
+```
+
+**Options:**
+- `--algorithm, -a`: Encryption algorithm (`aes-128`, `3des`)
+- `--password, -p`: Encryption password (will prompt if not provided)
+- `--output, -o`: Output file path (default: `input_file.txt`)
+- `--key-file, -k`: Use existing key file
+
+**Example Output:**
+```
+$ ck encrypt document.pdf --algorithm aes-128
+Enter encryption password: [hidden]
+Confirm password: [hidden]
+Encrypting document.pdf with AES-128...
+Encryption successful!
+  Encrypted file: document.pdf.txt
+  Key file: Key_document.pdf
+```
+
+### Decrypt
+
+Decrypt files encrypted with CryptoKit.
+
+```bash
+# Basic decryption
+ck decrypt encrypted_file.txt --key-file Key_original_file
+
+# Decrypt with custom output
+ck decrypt data.txt --key-file Key_data --output decrypted_data.pdf
+
+# Decrypt multiple files (bash expansion)
+for file in *.txt; do
+    ck decrypt "$file" --key-file "Key_${file%.txt}"
+done
+```
+
+**Options:**
+- `--key-file, -k`: Key file for decryption (required)
+- `--output, -o`: Output file path (default: remove `.txt` extension)
+
+**Example Output:**
+```
+$ ck decrypt document.pdf.txt --key-file Key_document.pdf
+Decrypting document.pdf.txt...
+Decryption successful!
+  Decrypted file: document.pdf
+```
+
+### Hash
+
+Generate cryptographic hashes for files and directories.
+
+```bash
+# Hash single file
+ck hash document.pdf --algorithm sha256
+
+# Hash with different algorithms
+ck hash file.txt --algorithm md5
+ck hash file.txt --algorithm sha1
+ck hash file.txt --algorithm blake2b
+
+# Hash directory (all files)
+ck hash /path/to/directory --algorithm sha256
+
+# Hash without saving to file
+ck hash file.txt --algorithm sha256 --no-save
+
+# Hash with all supported algorithms
+for algo in md5 sha1 sha256 sha384 sha512 blake2b blake2s; do
+    ck hash file.txt --algorithm $algo
+done
+```
+
+**Options:**
+- `--algorithm, -a`: Hash algorithm (default: `sha256`)
+  - Available: `md5`, `sha1`, `sha256`, `sha384`, `sha512`, `blake2b`, `blake2s`
+- `--no-save`: Don't save hash to file (print only)
+
+**Example Output:**
+```
+$ ck hash document.pdf --algorithm sha256
+Hashing file document.pdf with SHA256...
+SHA256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+Hash saved to: document.pdfHash.txt
+```
+
+### Crack
+
+Analyze and attempt to crack cryptographic hashes.
+
+```bash
+# Detect hash type
+ck crack 5d41402abc4b2a76b9719d911017c592 --detect
+
+# Full analysis
+ck crack 5d41402abc4b2a76b9719d911017c592 --analyze
+
+# Quick crack attempt (common passwords)
+ck crack 5d41402abc4b2a76b9719d911017c592 --quick
+
+# Crack with custom wordlist
+ck crack hash_value --wordlist /usr/share/wordlists/rockyou.txt
+
+# Crack with specified hash type
+ck crack hash_value --type md5 --max-length 8
+
+# Brute force with custom length
+ck crack hash_value --max-length 6
+```
+
+**Options:**
+- `--type, -t`: Hash type (auto-detect if not specified)
+- `--wordlist, -w`: Custom wordlist file
+- `--max-length, -L`: Maximum brute force length (default: 6)
+- `--quick`: Quick mode (top common passwords only)
+- `--detect`: Detect hash type only
+- `--analyze`: Full analysis (detection + strength assessment)
+
+**Example Output:**
+```
+$ ck crack 5d41402abc4b2a76b9719d911017c592 --analyze
+
+Performing comprehensive analysis of: 5d41402abc4b2a76b9719d911017c592
+
+Detection
+Type: MD5 (128 bits)
+Description: MD5 message-digest algorithm
+Confidence: 100.0%
+
+Security
+Algorithm Rating: Weak
+Overall Rating: Poor (2/10)
+Crack Difficulty: Very Easy
+Estimated Time: Seconds to minutes
+
+Vulnerabilities:
+  - Cryptographically broken since 2004
+  - Vulnerable to collision attacks
+  - Fast computation enables brute force
+
+Recommendations:
+  Use SHA-256 or stronger algorithms for new applications
+```
+
+### Hide
+
+Hide data in files using steganography techniques.
+
+```bash
+# Hide text in image
+ck hide cover.jpg secret.txt output.jpg
+
+# Hide with password protection
+ck hide image.png data.txt stego.png --password mypassword
+
+# Hide with specific method
+ck hide cover.bmp secret.txt output.bmp --method lsb
+
+# Hide text in text file
+ck hide cover.txt secret.txt output.txt --method text
+
+# Check capacity before hiding
+ck hide large_image.png large_file.txt output.png
+```
+
+**Options:**
+- `--password, -p`: Password for encryption
+- `--method, -m`: Steganography method (`lsb`, `text`, `binary`) (default: `lsb`)
+
+**Example Output:**
+```
+$ ck hide cover.jpg secret.txt output.jpg --password mykey
+Analyzing cover file capacity...
+Cover file: cover.jpg
+Method: LSB Image Steganography
+Capacity: 196608 bytes (192 KB)
+File usage: 1.2%
+Secret file size: 2341 bytes
+Hiding secret.txt in cover.jpg...
+Data hiding successful!
+  Output file: output.jpg
+  Hidden data: 2341 bytes
+  Encryption: Yes (password protected)
+```
+
+### Extract
+
+Extract hidden data from steganography files.
+
+```bash
+# Extract data from image
+ck extract stego_image.jpg
+
+# Extract with password
+ck extract hidden.png --password mypassword
+
+# Extract to specific file
+ck extract stego.jpg --output extracted_data.txt
+
+# Extract with specific method
+ck extract file.txt --method text --output data.txt
+
+# Auto-detect method
+ck extract unknown_stego.png --output data.bin
+```
+
+**Options:**
+- `--output, -o`: Output file for extracted data
+- `--password, -p`: Password for decryption
+- `--method, -m`: Steganography method (auto-detect if not specified)
+
+**Example Output:**
+```
+$ ck extract stego.jpg --password mykey --output secret.txt
+Extracting hidden data from stego.jpg...
+Data extraction successful!
+  Extracted file: secret.txt
+  Extracted data: 2341 bytes
+  Decryption: Yes (password used)
+```
+
+### Metadata
+
+Analyze file metadata, content, and security indicators.
+
+```bash
+# Basic file analysis
+ck metadata file.exe
+
+# Detailed analysis
+ck metadata suspicious.exe --format detailed
+
+# Directory analysis
+ck metadata /downloads --recursive
+
+# Security-focused scan
+ck metadata /tmp --recursive --risk-only
+
+# Export to different formats
+ck metadata file.pdf --format json --output report.json
+ck metadata folder/ --format csv --output analysis.csv
+
+# Large-scale analysis
+ck metadata /home/user --recursive --max-files 1000 --max-size 50
+
+# Pattern-based filtering
+ck metadata /var/log --pattern "*.log" --recursive
+```
+
+**Options:**
+- `--recursive, -r`: Analyze directory recursively
+- `--format`: Output format (`summary`, `detailed`, `json`, `csv`) (default: `summary`)
+- `--output, -o`: Save results to file
+- `--max-size`: Maximum file size in MB (default: 100)
+- `--max-files`: Maximum files to analyze (default: 100)
+- `--pattern`: File pattern for filtering (default: `*`)
+- `--risk-only`: Show only files with security risks
+- `--no-content`: Skip content analysis
+- `--no-security`: Skip security scanning
+- `--show-strings`: Include string analysis
+
+**Example Output:**
+```
+$ ck metadata suspicious.exe --format detailed
+
+File Analysis Report
+===================
+File: suspicious.exe
+Size: 524,288 bytes
+Type: PE32 executable
+MIME: application/x-dosexec
+
+Security Assessment
+------------------
+Risk Level: HIGH (85/100)
+Threats Detected: 3
+
+Findings:
+- Packed executable detected
+- Suspicious string patterns found
+- No digital signature
+- High entropy sections
+
+Recommendations:
+- Scan with updated antivirus
+- Execute in isolated environment
+- Verify file source and integrity
+```
+
+### Config
+
+Manage CryptoKit configuration settings.
+
+```bash
+# Show all configuration
 ck config show
 
-# Modify settings
-ck config set encryption.default_algorithm aes-256-gcm
-ck config set cracking.tools.hashcat.gpu_enabled true
+# Get specific setting
+ck config get encryption.default_algorithm
+ck config get hashing.chunk_size
+
+# Set configuration values
+ck config set encryption.default_algorithm aes-128
+ck config set hashing.default_algorithm sha256
+ck config set cli.colored_output true
+
+# Configuration examples
+ck config set cracking.tools.hashcat.gpu_enabled false
+ck config set metadata.max_file_size 200MB
+ck config set steganography.encryption_before_hiding true
+```
+
+**Actions:**
+- `show`: Display current configuration
+- `get <key>`: Get specific configuration value
+- `set <key> <value>`: Set configuration value
+
+**Example Output:**
+```
+$ ck config get encryption.default_algorithm
+encryption.default_algorithm: aes-256-gcm
+
+$ ck config set encryption.default_algorithm aes-128
+Set encryption.default_algorithm = aes-128
+```
+
+### Interactive
+
+Start interactive mode for guided operation.
+
+```bash
+# Start interactive mode
+ck interactive
+
+# Alternative syntax
+ck i
+```
+
+**Interactive Menu:**
+```
+CryptoKit (CK) - Interactive Mode
+A comprehensive cryptography toolkit
+Type 'help' for available commands or 'quit' to exit
+
+CK> help
+
+Available Commands:
+Command    Description                              Status
+encrypt    Encrypt files with symmetric algorithms Available
+decrypt    Decrypt files with symmetric algorithms Available
+hash       Generate file hashes                    Available
+crack      Crack & analyze hashes                  Available
+hide       Hide data in files                      Available
+extract    Extract hidden data                     Available
+metadata   File metadata analysis                  Available
+config     Configuration management                Available
+help       Show this help                          Available
+quit       Exit the program                        Available
+
+CK> encrypt
+Enter file path to encrypt: document.txt
+Select algorithm:
+  1. aes-128
+  2. 3des
+Select algorithm (1-2): 1
+Enter encryption password: [hidden]
+Confirm password: [hidden]
+Encrypting document.txt with aes-128...
+Encryption successful!
+  Encrypted file: document.txt.txt
+  Key file: Key_document.txt
+```
+
+## Configuration
+
+CryptoKit uses YAML configuration files located in the `config/` directory.
+
+### Configuration File Locations
+
+- **Default**: `config/default.yaml`
+- **User**: `~/.ck/config.yaml` (created automatically)
+- **Custom**: Specify with `--config` option
+
+### Key Configuration Sections
+
+```yaml
+# Encryption settings
+encryption:
+  default_algorithm: "aes-128"
+  key_derivation: "argon2"
+  iterations: 100000
+
+# Hashing settings  
+hashing:
+  default_algorithm: "sha256"
+  chunk_size: 65536
+
+# Cracking settings
+cracking:
+  tools:
+    hashcat:
+      gpu_enabled: true
+    john:
+      path: "/usr/bin/john"
+
+# CLI settings
+cli:
+  interactive_mode: true
+  colored_output: true
+  progress_bars: true
 ```
 
 ## Development
 
-### Development Setup
+### Running Tests
+
 ```bash
 # Install development dependencies
-pip install -r requirements-dev.txt
+pip install pytest pytest-cov
 
 # Run tests
-pytest tests/ -v --cov=ck
+pytest tests/ -v
 
-# Code formatting
-black ck/ tests/
-flake8 ck/ tests/
-
-# Type checking
-mypy ck/
+# Run with coverage
+pytest tests/ --cov=ck --cov-report=html
 ```
 
-### Adding New Features
-CryptoKit's modular architecture makes it easy to extend:
-
-1. **New Encryption Algorithm**: Implement `CryptographicAlgorithm` interface
-2. **New Hash Function**: Add to `hashing/algorithms.py`
-3. **New Steganography Method**: Create plugin in `steganography/`
-4. **New CLI Command**: Add to `cli/commands/`
-
-## Documentation
-
-- [API Documentation](docs/api/)
-- [User Guide](docs/user-guide.md)
-- [Developer Guide](docs/developer-guide.md)
-- [Security Considerations](docs/security.md)
-
-## Testing
+### Code Style
 
 ```bash
-# Run all tests
-pytest
+# Install formatting tools
+pip install black flake8
 
-# Run specific test categories
-pytest tests/unit/
-pytest tests/integration/
+# Format code
+black ck/ tests/
 
-# Generate coverage report
-pytest --cov=ck --cov-report=html
+# Check style
+flake8 ck/ tests/
 ```
 
-## Security Considerations
+## Troubleshooting
 
-- **Memory Safety**: Secure deletion of sensitive data
-- **Key Management**: Proper key derivation and storage
-- **Randomness**: Cryptographically secure random number generation
-- **Side-Channel Resistance**: Timing attack mitigation
-- **Input Validation**: Comprehensive input sanitization
+### Common Issues
+
+**Import Error:**
+```bash
+# Ensure virtual environment is activated
+source venv/bin/activate
+
+# Reinstall in development mode
+pip install -e .
+```
+
+**Permission Denied:**
+```bash
+# Make sure you have write permissions
+chmod +w /path/to/file
+
+# For system-wide installation (not recommended)
+sudo pip install -e .
+```
+
+**Module Not Found:**
+```bash
+# Check Python path
+python -c "import sys; print(sys.path)"
+
+# Reinstall requirements
+pip install -r requirements.txt
+```
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. Make your changes
+4. Add tests if applicable
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Educational Purpose
-
-This project is designed for educational purposes to demonstrate:
-- Cryptographic algorithm implementation
-- Secure software development practices
-- Modular architecture design
-- CLI application development
-- Integration with external security tools
-
-## Disclaimer
-
-This tool is for educational and authorized testing purposes only. Users are responsible for ensuring compliance with applicable laws and regulations. The authors are not responsible for any misuse of this software.
-
 ## Acknowledgments
 
 - [cryptography](https://github.com/pyca/cryptography) - Modern cryptographic library
-- [John the Ripper](https://www.openwall.com/john/) - Password cracking tool
-- [Hashcat](https://hashcat.net/hashcat/) - Advanced password recovery
 - [Rich](https://github.com/Textualize/rich) - Beautiful terminal formatting
+- [Pillow](https://github.com/python-pillow/Pillow) - Image processing library
 
----
+## Security Notice
 
-**Status**: Active Development | **Version**: 0.1.0-alpha | **Python**: 3.9+
+This tool is designed for educational and authorized testing purposes only. Users are responsible for ensuring compliance with applicable laws and regulations. The authors are not responsible for any misuse of this software.
