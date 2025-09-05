@@ -1,11 +1,14 @@
 """
 Main CLI entry point for CryptoKit (CK)
 
-Provides the primary command-line interface for all cryptographic operations.
+Simple, fast, and easy-to-use cryptographic toolkit.
 """
 
 import sys
 import argparse
+import os
+import getpass
+import hashlib
 from typing import List, Optional
 from pathlib import Path
 
@@ -13,1141 +16,389 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from ck.core.config import ConfigManager
-from ck.core.logger import setup_logger
-from ck.core.exceptions import CKException
+# Suppress all logging by default for clean output
+import logging
+logging.getLogger().setLevel(logging.CRITICAL)
 
 
 def create_parser() -> argparse.ArgumentParser:
-    """
-    Create the main argument parser.
-    
-    Returns:
-        Configured ArgumentParser instance
-    """
+    """Create the main argument parser."""
     parser = argparse.ArgumentParser(
         prog="ck",
-        description="CryptoKit (CK) - Comprehensive Cryptography Toolkit",
-        epilog="For more information about specific commands, use: ck <command> --help"
+        description="CryptoKit (CK) - Simple Cryptography Toolkit"
     )
     
-    parser.add_argument(
-        "--version",
-        action="version",
-        version="CryptoKit (CK) 0.1.0-alpha"
-    )
+    parser.add_argument("--version", action="version", version="CryptoKit (CK) 0.1.0")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Show detailed output")
     
-    parser.add_argument(
-        "--config",
-        metavar="FILE",
-        help="Configuration file path"
-    )
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
     
-    parser.add_argument(
-        "--log-level",
-        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        default="INFO",
-        help="Set logging level (default: INFO)"
-    )
+    # Interactive mode
+    subparsers.add_parser("interactive", help="Start interactive mode", aliases=["i"])
     
-    parser.add_argument(
-        "--quiet",
-        action="store_true",
-        help="Suppress console output (log to file only)"
-    )
+    # Encryption
+    encrypt_parser = subparsers.add_parser("encrypt", help="Encrypt files", aliases=["e"])
+    encrypt_parser.add_argument("file", help="File to encrypt")
+    encrypt_parser.add_argument("--algo", "-a", choices=["3des", "aes-128"], default="aes-128")
+    encrypt_parser.add_argument("--password", "-p", help="Password")
     
-    # Create subparsers for different commands
-    subparsers = parser.add_subparsers(
-        dest="command",
-        help="Available commands",
-        metavar="COMMAND"
-    )
+    # Decryption
+    decrypt_parser = subparsers.add_parser("decrypt", help="Decrypt files", aliases=["d"])
+    decrypt_parser.add_argument("file", help="Encrypted file")
+    decrypt_parser.add_argument("--password", "-p", help="Password")
     
-    # Interactive mode (default when no command specified)
-    subparsers.add_parser(
-        "interactive",
-        help="Start interactive mode",
-        aliases=["i"]
-    )
+    # Hashing
+    hash_parser = subparsers.add_parser("hash", help="Generate multiple hashes", aliases=["h"])
+    hash_parser.add_argument("file", help="File to hash")
     
-    # Configuration commands
-    config_parser = subparsers.add_parser(
-        "config",
-        help="Configuration management"
-    )
-    config_subparsers = config_parser.add_subparsers(
-        dest="config_action",
-        help="Configuration actions"
-    )
+    # Steganography
+    hide_parser = subparsers.add_parser("hide", help="Hide data in image")
+    hide_parser.add_argument("image", help="Cover image")
+    hide_parser.add_argument("data", help="Text file to hide")
+    hide_parser.add_argument("output", help="Output image")
+    hide_parser.add_argument("--password", "-p", help="Password")
     
-    config_subparsers.add_parser("show", help="Show current configuration")
+    extract_parser = subparsers.add_parser("extract", help="Extract data from image")
+    extract_parser.add_argument("image", help="Image with hidden data")
+    extract_parser.add_argument("--password", "-p", help="Password")
     
-    set_parser = config_subparsers.add_parser("set", help="Set configuration value")
-    set_parser.add_argument("key", help="Configuration key (dot notation)")
-    set_parser.add_argument("value", help="Configuration value")
-    
-    get_parser = config_subparsers.add_parser("get", help="Get configuration value")
-    get_parser.add_argument("key", help="Configuration key (dot notation)")
-    
-    # Encryption commands
-    encrypt_parser = subparsers.add_parser(
-        "encrypt",
-        help="Encrypt files using symmetric algorithms",
-        aliases=["enc", "e"]
-    )
-    encrypt_parser.add_argument(
-        "file",
-        help="File to encrypt"
-    )
-    encrypt_parser.add_argument(
-        "--algorithm", "-a",
-        choices=["3des", "aes-128"],
-        help="Encryption algorithm (will prompt if not provided)"
-    )
-    encrypt_parser.add_argument(
-        "--output", "-o",
-        help="Output file path (default: input_file.txt)"
-    )
-    encrypt_parser.add_argument(
-        "--password", "-p",
-        help="Encryption password (will prompt if not provided)"
-    )
-    encrypt_parser.add_argument(
-        "--key-file", "-k",
-        help="Use existing key file instead of generating new one"
-    )
-    
-    # Decryption commands
-    decrypt_parser = subparsers.add_parser(
-        "decrypt", 
-        help="Decrypt files using symmetric algorithms",
-        aliases=["dec", "d"]
-    )
-    decrypt_parser.add_argument(
-        "file",
-        help="Encrypted file to decrypt (.txt)"
-    )
-    decrypt_parser.add_argument(
-        "--key-file", "-k",
-        required=True,
-        help="Key file for decryption"
-    )
-    decrypt_parser.add_argument(
-        "--output", "-o", 
-        help="Output file path (default: remove .txt extension)"
-    )
-    
-    # Hashing commands
-    hash_parser = subparsers.add_parser(
-        "hash",
-        help="Generate hashes of files or directories",
-        aliases=["h"]
-    )
-    hash_parser.add_argument(
-        "target",
-        help="File or directory to hash"
-    )
-    hash_parser.add_argument(
-        "--algorithm", "-a",
-        choices=["md5", "sha1", "sha256", "sha384", "sha512", "blake2b", "blake2s"],
-        default="sha256",
-        help="Hash algorithm (default: sha256)"
-    )
-    hash_parser.add_argument(
-        "--no-save",
-        action="store_true",
-        help="Don't save hash to file (print only)"
-    )
-    
-    # Hash cracking commands
-    crack_parser = subparsers.add_parser(
-        "crack",
-        help="Crack and analyze hashes (built-in simple engine)"
-    )
-    crack_parser.add_argument(
-        "hash_value",
-        help="Hash value to crack"
-    )
-    crack_parser.add_argument(
-        "--type", "-t",
-        help="Hash type (auto-detect if not specified)"
-    )
-    crack_parser.add_argument(
-        "--wordlist", "-w",
-        help="Custom wordlist file to use"
-    )
-    crack_parser.add_argument(
-        "--max-length", "-L",
-        type=int,
-        default=6,
-        help="Max brute force length (default: 6)"
-    )
-    crack_parser.add_argument(
-        "--quick",
-        action="store_true",
-        help="Quick mode (top common passwords only)"
-    )
-    crack_parser.add_argument(
-        "--detect",
-        action="store_true",
-        help="Detect hash type only (no cracking)"
-    )
-    crack_parser.add_argument(
-        "--analyze",
-        action="store_true",
-        help="Full analysis (detection + strength assessment)"
-    )
-    
-    # Steganography commands
-    hide_parser = subparsers.add_parser(
-        "hide",
-        help="Hide data in files using steganography"
-    )
-    hide_parser.add_argument("cover_file", help="Cover file (image, text, etc.)")
-    hide_parser.add_argument("secret_file", help="File containing secret data")
-    hide_parser.add_argument("output_file", help="Output file with hidden data")
-    hide_parser.add_argument("--password", "-p", help="Password for encryption")
-    hide_parser.add_argument("--method", "-m", choices=["lsb", "text", "binary"], 
-                             default="lsb", help="Steganography method (default: lsb)")
-    
-    extract_parser = subparsers.add_parser(
-        "extract", 
-        help="Extract hidden data from steganography files"
-    )
-    extract_parser.add_argument("stego_file", help="File containing hidden data")
-    extract_parser.add_argument("--output", "-o", help="Output file for extracted data")
-    extract_parser.add_argument("--password", "-p", help="Password for decryption")
-    extract_parser.add_argument("--method", "-m", choices=["lsb", "text", "binary"], 
-                                help="Steganography method (auto-detect if not specified)")
-    
-    # Metadata commands
-    meta_parser = subparsers.add_parser(
-        "metadata",
-        help="Analyze file metadata, content, and security indicators",
-        aliases=["meta"]
-    )
-    meta_parser.add_argument(
-        "path",
-        help="Path to file or directory to analyze"
-    )
-    meta_parser.add_argument(
-        "--recursive", "-r",
-        action="store_true",
-        help="Analyze directory recursively"
-    )
-    meta_parser.add_argument(
-        "--no-content",
-        action="store_true", 
-        help="Skip content analysis"
-    )
-    meta_parser.add_argument(
-        "--no-security",
-        action="store_true",
-        help="Skip security scanning"
-    )
-    meta_parser.add_argument(
-        "--format",
-        choices=["json", "summary", "detailed", "csv"],
-        default="summary",
-        help="Output format (default: summary)"
-    )
-    meta_parser.add_argument(
-        "--output", "-o",
-        help="Save results to file"
-    )
-    meta_parser.add_argument(
-        "--max-size",
-        type=int,
-        default=100,
-        help="Maximum file size to analyze in MB (default: 100)"
-    )
-    meta_parser.add_argument(
-        "--max-files",
-        type=int,
-        default=100,
-        help="Maximum files to analyze in directory (default: 100)"
-    )
-    meta_parser.add_argument(
-        "--pattern",
-        default="*",
-        help="File pattern for directory analysis (default: *)"
-    )
-    meta_parser.add_argument(
-        "--show-strings",
-        action="store_true",
-        help="Include string analysis in detailed output"
-    )
-    meta_parser.add_argument(
-        "--risk-only",
-        action="store_true",
-        help="Show only files with security risks"
-    )
+    # Metadata
+    meta_parser = subparsers.add_parser("metadata", help="Show file details")
+    meta_parser.add_argument("file", help="File to analyze")
     
     return parser
 
 
-def interactive_mode(config: ConfigManager, logger) -> None:
-    """
-    Start interactive mode for user-friendly operation.
+def run_interactive():
+    """Run interactive mode with numbered options."""
+    print("\n" + "="*50)
+    print("         CryptoKit Interactive Mode")
+    print("="*50)
     
-    Args:
-        config: Configuration manager
-        logger: Logger instance
-    """
-    try:
-        from rich.console import Console
-        from rich.prompt import Prompt
-        from rich.panel import Panel
-        from rich.table import Table
+    while True:
+        print("\nSelect an option:")
+        print("1. Encrypt file")
+        print("2. Decrypt file") 
+        print("3. Generate hashes")
+        print("4. Hide data in image")
+        print("5. Extract data from image")
+        print("6. File metadata")
+        print("7. Exit")
         
-        console = Console()
+        choice = input("\nEnter choice (1-7): ").strip()
         
-        # Display welcome message
-        console.print(Panel.fit(
-            "[bold cyan]CryptoKit (CK) - Interactive Mode[/bold cyan]\n"
-            "A comprehensive cryptography toolkit\n"
-            "Type 'help' for available commands or 'quit' to exit",
-            border_style="cyan"
-        ))
-        
-        while True:
-            try:
-                choice = Prompt.ask(
-                    "\n[bold green]CK[/bold green]",
-                    choices=[
-                        "encrypt", "decrypt", "hash", "crack", 
-                        "hide", "extract", "metadata", "config", "help", "quit"
-                    ],
-                    default="help"
-                )
-                
-                if choice == "quit":
-                    console.print("[yellow]Goodbye![/yellow]")
-                    break
-                elif choice == "help":
-                    show_interactive_help(console)
-                elif choice == "config":
-                    show_config_menu(console, config)
-                elif choice == "encrypt":
-                    handle_interactive_encrypt(console, config, logger)
-                elif choice == "decrypt":
-                    handle_interactive_decrypt(console, config, logger)
-                else:
-                    console.print(f"[yellow]'{choice}' functionality coming in Phase {get_phase_number(choice)}![/yellow]")
-                    
-            except KeyboardInterrupt:
-                console.print("\n[yellow]Goodbye![/yellow]")
-                break
-            except Exception as e:
-                logger.error(f"Error in interactive mode: {e}")
-                console.print(f"[red]Error: {e}[/red]")
-                
-    except ImportError:
-        # Fallback to simple interactive mode without rich
-        print("CryptoKit (CK) - Interactive Mode")
-        print("Type 'help' for available commands or 'quit' to exit")
-        
-        while True:
-            try:
-                choice = input("\nCK> ").strip().lower()
-                
-                if choice == "quit":
-                    print("Goodbye!")
-                    break
-                elif choice == "help":
-                    show_simple_help()
-                elif choice == "config":
-                    show_simple_config_menu(config)
-                elif choice == "encrypt":
-                    handle_simple_encrypt(config, logger)
-                elif choice == "decrypt":
-                    handle_simple_decrypt(config, logger)
-                else:
-                    print(f"'{choice}' functionality coming in Phase {get_phase_number(choice)}!")
-                    
-            except KeyboardInterrupt:
-                print("\nGoodbye!")
-                break
-            except Exception as e:
-                logger.error(f"Error in interactive mode: {e}")
-                print(f"Error: {e}")
+        if choice == "1":
+            handle_interactive_encrypt()
+        elif choice == "2":
+            handle_interactive_decrypt()
+        elif choice == "3":
+            handle_interactive_hash()
+        elif choice == "4":
+            handle_interactive_hide()
+        elif choice == "5":
+            handle_interactive_extract()
+        elif choice == "6":
+            handle_interactive_metadata()
+        elif choice == "7":
+            print("Goodbye!")
+            break
+        else:
+            print("Invalid choice. Please enter 1-7.")
 
 
-def show_interactive_help(console) -> None:
-    """Show help in interactive mode with rich formatting."""
-    try:
-        from rich.table import Table
-        
-        table = Table(title="Available Commands")
-        table.add_column("Command", style="cyan")
-        table.add_column("Description", style="white")
-        table.add_column("Status", style="green")
-        
-        commands = [
-            ("encrypt", "Encrypt files with symmetric algorithms", "Available"),
-            ("decrypt", "Decrypt files with symmetric algorithms", "Available"),
-            ("hash", "Generate file hashes", "Available"),
-            ("crack", "Crack & analyze hashes", "Available"),
-            ("hide", "Hide data in files", "Available"),
-            ("extract", "Extract hidden data", "Available"),
-            ("metadata", "File metadata analysis", "Phase 5"),
-            ("config", "Configuration management", "Available"),
-            ("help", "Show this help", "Available"),
-            ("quit", "Exit the program", "Available"),
-        ]
-        
-        for cmd, desc, status in commands:
-            table.add_row(cmd, desc, status)
-        
-        console.print(table)
-    except ImportError:
-        show_simple_help()
-
-
-def show_simple_help() -> None:
-    """Show help in simple text format."""
-    print("\nAvailable Commands:")
-    print("  encrypt  - Encrypt files with symmetric algorithms (Available)")
-    print("  decrypt  - Decrypt files with symmetric algorithms (Available)")
-    print("  hash     - Generate file hashes (Available)")
-    print("  crack    - Crack & analyze hashes (Available)")
-    print("  hide     - Hide data in files (Available)")
-    print("  extract  - Extract hidden data (Available)")
-    print("  metadata - File metadata analysis (Phase 5)")
-    print("  config   - Configuration management (Available)")
-    print("  help     - Show this help (Available)")
-    print("  quit     - Exit the program (Available)")
-
-
-def show_config_menu(console, config: ConfigManager) -> None:
-    """Show configuration menu with rich formatting."""
-    try:
-        from rich.prompt import Prompt
-        
-        action = Prompt.ask(
-            "Configuration action",
-            choices=["show", "get", "set", "back"],
-            default="show"
-        )
-        
-        if action == "back":
-            return
-        elif action == "show":
-            settings = config.get_all_settings()
-            console.print_json(data=settings)
-        elif action == "get":
-            key = Prompt.ask("Configuration key")
-            value = config.get_setting(key, "Not found")
-            console.print(f"[cyan]{key}[/cyan]: [white]{value}[/white]")
-        elif action == "set":
-            key = Prompt.ask("Configuration key")
-            value = Prompt.ask("Configuration value")
-            config.set_setting(key, value)
-            console.print(f"[green]Set {key} = {value}[/green]")
-    except ImportError:
-        show_simple_config_menu(config)
-
-
-def show_simple_config_menu(config: ConfigManager) -> None:
-    """Show configuration menu in simple text format."""
-    print("Configuration actions: show, get, set, back")
-    action = input("Action: ").strip().lower()
-    
-    if action == "back":
+def handle_interactive_encrypt():
+    """Handle interactive encryption."""
+    filename = input("Enter file to encrypt: ").strip()
+    if not os.path.exists(filename):
+        print(f"Error: File '{filename}' not found")
         return
-    elif action == "show":
-        settings = config.get_all_settings()
-        import json
-        print(json.dumps(settings, indent=2))
-    elif action == "get":
-        key = input("Configuration key: ").strip()
-        value = config.get_setting(key, "Not found")
-        print(f"{key}: {value}")
-    elif action == "set":
-        key = input("Configuration key: ").strip()
-        value = input("Configuration value: ").strip()
-        config.set_setting(key, value)
-        print(f"Set {key} = {value}")
+        
+    print("\nAlgorithms:")
+    print("1. AES-128 (recommended)")
+    print("2. 3DES")
+    
+    algo_choice = input("Select algorithm (1-2): ").strip()
+    algo = "aes-128" if algo_choice == "1" else "3des"
+    
+    password = getpass.getpass("Enter password: ")
+    encrypt_file_simple(filename, algo, password)
 
 
-def handle_interactive_encrypt(console, config: ConfigManager, logger) -> None:
-    """Handle encryption in interactive mode with rich formatting."""
+def handle_interactive_decrypt():
+    """Handle interactive decryption."""
+    filename = input("Enter encrypted file: ").strip()
+    if not os.path.exists(filename):
+        print(f"Error: File '{filename}' not found")
+        return
+        
+    password = getpass.getpass("Enter password: ")
+    decrypt_file_simple(filename, password)
+
+
+def handle_interactive_hash():
+    """Handle interactive hashing."""
+    filename = input("Enter file to hash: ").strip()
+    if not os.path.exists(filename):
+        print(f"Error: File '{filename}' not found")
+        return
+    
+    generate_multiple_hashes(filename)
+
+
+def handle_interactive_hide():
+    """Handle interactive steganography hiding."""
+    image = input("Enter cover image: ").strip()
+    data_file = input("Enter text file to hide: ").strip()
+    output = input("Enter output image name: ").strip()
+    password = getpass.getpass("Enter password (optional): ")
+    
+    if not os.path.exists(image):
+        print(f"Error: Image '{image}' not found")
+        return
+    if not os.path.exists(data_file):
+        print(f"Error: Data file '{data_file}' not found")
+        return
+        
+    hide_data_simple(image, data_file, output, password)
+
+
+def handle_interactive_extract():
+    """Handle interactive steganography extraction."""
+    image = input("Enter image with hidden data: ").strip()
+    password = getpass.getpass("Enter password: ")
+    
+    if not os.path.exists(image):
+        print(f"Error: Image '{image}' not found")
+        return
+        
+    extract_data_simple(image, password)
+
+
+def handle_interactive_metadata():
+    """Handle interactive metadata analysis."""
+    filename = input("Enter file to analyze: ").strip()
+    if not os.path.exists(filename):
+        print(f"Error: File '{filename}' not found")
+        return
+        
+    show_file_metadata(filename)
+
+
+def encrypt_file_simple(filename: str, algorithm: str, password: str):
+    """Simple encryption with custom output naming."""
     try:
-        from rich.prompt import Prompt
-        from pathlib import Path
-        from getpass import getpass
-        from ck.services.symmetric import SymmetricEncryptionService
+        from ck.services.symmetric import SymmetricService
         
-        # Get input file
-        file_path = Prompt.ask("Enter file path to encrypt")
-        input_file = Path(file_path)
+        if not password:
+            password = getpass.getpass("Enter password: ")
         
-        if not input_file.exists():
-            console.print(f"[red]Error: File not found: {input_file}[/red]")
-            return
+        service = SymmetricService()
         
-        # Initialize service and get algorithms
-        service = SymmetricEncryptionService()
-        available = service.get_available_algorithms()
+        # Create output filename: demo.txt -> demoEncrypt.txt
+        path = Path(filename)
+        base_name = path.stem
+        extension = path.suffix
+        output_file = f"{base_name}Encrypt{extension}"
         
-        # Select algorithm
-        algorithm = Prompt.ask(
-            "Select algorithm",
-            choices=available,
-            default=available[0] if available else "aes-128"
-        )
-        
-        # Get password
-        console.print("Enter encryption password:")
-        password = getpass()
-        console.print("Confirm password:")
-        confirm = getpass()
-        
-        if password != confirm:
-            console.print("[red]Error: Passwords do not match.[/red]")
-            return
-        
-        # Perform encryption
-        console.print(f"Encrypting {input_file} with {algorithm}...")
-        encrypted_file, key_file_path = service.encrypt_file(
-            input_file=input_file,
+        service.encrypt_file(
+            input_file=filename,
+            output_file=output_file,
             algorithm=algorithm,
             password=password
         )
         
-        console.print("[green]Encryption successful![/green]")
-        console.print(f"  Encrypted file: [cyan]{encrypted_file}[/cyan]")
-        console.print(f"  Key file: [cyan]{key_file_path}[/cyan]")
+        print(f"File encrypted successfully: {output_file}")
         
-    except ImportError:
-        handle_simple_encrypt(config, logger)
     except Exception as e:
-        logger.error(f"Interactive encryption failed: {e}")
-        console.print(f"[red]Error: {e}[/red]")
+        print(f"Error: {e}")
 
 
-def handle_simple_encrypt(config: ConfigManager, logger) -> None:
-    """Handle encryption in simple interactive mode."""
+def decrypt_file_simple(filename: str, password: str):
+    """Simple decryption with password."""
     try:
-        from pathlib import Path
-        from getpass import getpass
-        from ck.services.symmetric import SymmetricEncryptionService
+        from ck.services.symmetric import SymmetricService
         
-        # Get input file
-        file_path = input("Enter file path to encrypt: ").strip()
-        input_file = Path(file_path)
+        if not password:
+            password = getpass.getpass("Enter password: ")
         
-        if not input_file.exists():
-            print(f"Error: File not found: {input_file}")
-            return
+        service = SymmetricService()
         
-        # Initialize service and get algorithms
-        service = SymmetricEncryptionService()
-        available = service.get_available_algorithms()
+        # Create output filename: demoEncrypt.txt -> demoDecrypt.txt
+        path = Path(filename)
+        if "Encrypt" in path.stem:
+            base_name = path.stem.replace("Encrypt", "Decrypt")
+        else:
+            base_name = path.stem + "Decrypt"
         
-        # Select algorithm
-        print("Available algorithms:")
-        for i, algo in enumerate(available, 1):
-            print(f"  {i}. {algo}")
+        extension = path.suffix
+        output_file = f"{base_name}{extension}"
         
-        while True:
-            try:
-                choice = input("Select algorithm (1-3): ").strip()
-                idx = int(choice) - 1
-                if 0 <= idx < len(available):
-                    algorithm = available[idx]
-                    break
-                else:
-                    print("Invalid choice. Please select 1-3.")
-            except ValueError:
-                print("Invalid input. Please enter a number.")
-        
-        # Get password
-        password = getpass("Enter encryption password: ")
-        confirm = getpass("Confirm password: ")
-        
-        if password != confirm:
-            print("Error: Passwords do not match.")
-            return
-        
-        # Perform encryption
-        print(f"Encrypting {input_file} with {algorithm}...")
-        encrypted_file, key_file_path = service.encrypt_file(
-            input_file=input_file,
-            algorithm=algorithm,
+        service.decrypt_file(
+            input_file=filename,
+            output_file=output_file,
             password=password
         )
         
-        print("Encryption successful!")
-        print(f"  Encrypted file: {encrypted_file}")
-        print(f"  Key file: {key_file_path}")
+        print(f"File decrypted successfully: {output_file}")
         
     except Exception as e:
-        logger.error(f"Simple encryption failed: {e}")
         print(f"Error: {e}")
 
 
-def handle_interactive_decrypt(console, config: ConfigManager, logger) -> None:
-    """Handle decryption in interactive mode with rich formatting."""
+def generate_multiple_hashes(filename: str):
+    """Generate multiple hashes for a file."""
     try:
-        from rich.prompt import Prompt
-        from pathlib import Path
-        from ck.services.symmetric import SymmetricEncryptionService
+        algorithms = ['md5', 'sha1', 'sha256', 'sha512', 'blake2b']
         
-        # Get input files
-        encrypted_path = Prompt.ask("Enter encrypted file path (.txt)")
-        encrypted_file = Path(encrypted_path)
+        with open(filename, 'rb') as f:
+            data = f.read()
         
-        if not encrypted_file.exists():
-            console.print(f"[red]Error: Encrypted file not found: {encrypted_file}[/red]")
-            return
+        print(f"\nHashes for file: {filename}")
+        print("-" * 50)
         
-        key_path = Prompt.ask("Enter key file path")
-        key_file = Path(key_path)
-        
-        if not key_file.exists():
-            console.print(f"[red]Error: Key file not found: {key_file}[/red]")
-            return
-        
-        # Initialize service
-        service = SymmetricEncryptionService()
-        
-        # Perform decryption
-        console.print(f"Decrypting {encrypted_file}...")
-        decrypted_file = service.decrypt_file(
-            encrypted_file=encrypted_file,
-            key_file=key_file
-        )
-        
-        console.print("[green]Decryption successful![/green]")
-        console.print(f"  Decrypted file: [cyan]{decrypted_file}[/cyan]")
-        
-    except ImportError:
-        handle_simple_decrypt(config, logger)
-    except Exception as e:
-        logger.error(f"Interactive decryption failed: {e}")
-        console.print(f"[red]Error: {e}[/red]")
-
-
-def handle_simple_decrypt(config: ConfigManager, logger) -> None:
-    """Handle decryption in simple interactive mode."""
-    try:
-        from pathlib import Path
-        from ck.services.symmetric import SymmetricEncryptionService
-        
-        # Get input files
-        encrypted_path = input("Enter encrypted file path (.txt): ").strip()
-        encrypted_file = Path(encrypted_path)
-        
-        if not encrypted_file.exists():
-            print(f"Error: Encrypted file not found: {encrypted_file}")
-            return
-        
-        key_path = input("Enter key file path: ").strip()
-        key_file = Path(key_path)
-        
-        if not key_file.exists():
-            print(f"Error: Key file not found: {key_file}")
-            return
-        
-        # Initialize service
-        service = SymmetricEncryptionService()
-        
-        # Perform decryption
-        print(f"Decrypting {encrypted_file}...")
-        decrypted_file = service.decrypt_file(
-            encrypted_file=encrypted_file,
-            key_file=key_file
-        )
-        
-        print("Decryption successful!")
-        print(f"  Decrypted file: {decrypted_file}")
-        
-    except Exception as e:
-        logger.error(f"Simple decryption failed: {e}")
-        print(f"Error: {e}")
-
-
-def get_phase_number(command: str) -> int:
-    """Get the phase number for a command."""
-    phase_map = {
-        "encrypt": 1, "decrypt": 1,
-        "hash": 2,
-        "crack": 3,
-        "hide": 4, "extract": 4,
-        "metadata": 5
-    }
-    return phase_map.get(command, 1)
-
-
-def main(argv: Optional[List[str]] = None) -> int:
-    """
-    Main entry point for the CLI.
-    
-    Args:
-        argv: Command-line arguments (uses sys.argv if None)
-        
-    Returns:
-        Exit code (0 for success, non-zero for error)
-    """
-    try:
-        # Parse arguments
-        parser = create_parser()
-        args = parser.parse_args(argv)
-        
-        # Initialize configuration
-        config = ConfigManager(args.config if hasattr(args, 'config') else None)
-        
-        # Setup logging
-        log_level = getattr(args, 'log_level', 'INFO')
-        console_output = not getattr(args, 'quiet', False)
-        logger = setup_logger(
-            log_level=log_level,
-            console_output=console_output
-        )
-        
-        logger.info("CryptoKit (CK) starting up")
-        
-        # Handle commands
-        command = getattr(args, 'command', None)
-        
-        if not command or command in ['interactive', 'i']:
-            # Start interactive mode
-            interactive_mode(config, logger)
-        elif command == 'config':
-            handle_config_command(args, config, logger)
-        elif command in ['encrypt', 'enc', 'e']:
-            handle_encrypt_command(args, config, logger)
-        elif command in ['decrypt', 'dec', 'd']:
-            handle_decrypt_command(args, config, logger)
-        elif command in ['hash', 'h']:
-            handle_hash_command(args, config, logger)
-        elif command == 'crack':
-            handle_crack_command(args, config, logger)
-        elif command == 'hide':
-            handle_hide_command(args, config, logger)
-        elif command == 'extract':
-            handle_extract_command(args, config, logger)
-        elif command in ['metadata', 'meta']:
-            handle_metadata_command(args, config, logger)
-        else:
-            # For now, show that other commands are not implemented
-            print(f"Command '{command}' is planned for a future phase.")
-            print("Currently available: encrypt, decrypt, hash, crack, hide, extract, metadata, interactive mode and config management.")
-            return 1
-        
-        logger.info("CryptoKit (CK) shutting down")
-        return 0
-        
-    except KeyboardInterrupt:
-        print("\nOperation cancelled by user.")
-        return 1
-    except CKException as e:
-        print(f"Error: {e.message}")
-        return 1
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-        return 1
-
-
-def handle_config_command(args, config: ConfigManager, logger) -> None:
-    """Handle configuration commands."""
-    action = getattr(args, 'config_action', None)
-    
-    if action == 'show':
-        settings = config.get_all_settings()
-        import json
-        print(json.dumps(settings, indent=2))
-    elif action == 'get':
-        value = config.get_setting(args.key, "Not found")
-        print(f"{args.key}: {value}")
-    elif action == 'set':
-        config.set_setting(args.key, args.value)
-        print(f"Set {args.key} = {args.value}")
-        config.save_config()
-    else:
-        print("Available config actions: show, get, set")
-
-
-def handle_encrypt_command(args, config: ConfigManager, logger) -> None:
-    """Handle encryption command."""
-    from pathlib import Path
-    from getpass import getpass
-    from ck.services.symmetric import SymmetricEncryptionService
-    
-    try:
-        # Initialize service
-        service = SymmetricEncryptionService()
-        
-        # Validate input file
-        input_file = Path(args.file)
-        if not input_file.exists():
-            print(f"Error: File not found: {input_file}")
-            return
-        
-        # Select algorithm
-        algorithm = args.algorithm
-        if not algorithm:
-            available = service.get_available_algorithms()
-            print("Available algorithms:")
-            for i, algo in enumerate(available, 1):
-                print(f"  {i}. {algo}")
+        for algo in algorithms:
+            if algo == 'md5':
+                hash_obj = hashlib.md5(data)
+            elif algo == 'sha1':
+                hash_obj = hashlib.sha1(data)
+            elif algo == 'sha256':
+                hash_obj = hashlib.sha256(data)
+            elif algo == 'sha512':
+                hash_obj = hashlib.sha512(data)
+            elif algo == 'blake2b':
+                hash_obj = hashlib.blake2b(data)
             
-            while True:
-                try:
-                    choice = input("Select algorithm (1-3): ").strip()
-                    idx = int(choice) - 1
-                    if 0 <= idx < len(available):
-                        algorithm = available[idx]
-                        break
-                    else:
-                        print("Invalid choice. Please select 1-3.")
-                except (ValueError, KeyboardInterrupt):
-                    print("\nOperation cancelled.")
-                    return
-        
-        # Get password if needed
-        password = args.password
-        key_file = Path(args.key_file) if args.key_file else None
-        
-        if not key_file:
-            if not password:
-                password = getpass("Enter encryption password: ")
-                confirm = getpass("Confirm password: ")
-                if password != confirm:
-                    print("Error: Passwords do not match.")
-                    return
-        
-        # Set output file
-        output_file = Path(args.output) if args.output else None
-        
-        # Perform encryption
-        print(f"Encrypting {input_file} with {algorithm}...")
-        encrypted_file, key_file_path = service.encrypt_file(
-            input_file=input_file,
-            algorithm=algorithm,
-            password=password,
-            key_file=key_file,
-            output_file=output_file
-        )
-        
-        print(f"Encryption successful!")
-        print(f"  Encrypted file: {encrypted_file}")
-        print(f"  Key file: {key_file_path}")
+            hash_value = hash_obj.hexdigest()
+            print(f"{algo.upper():<10}: {hash_value}")
         
     except Exception as e:
-        logger.error(f"Encryption failed: {e}")
         print(f"Error: {e}")
 
 
-def handle_decrypt_command(args, config: ConfigManager, logger) -> None:
-    """Handle decryption command."""
-    from pathlib import Path
-    from ck.services.symmetric import SymmetricEncryptionService
-    
+def hide_data_simple(image: str, data_file: str, output: str, password: str):
+    """Simple steganography hiding with clean output."""
     try:
-        # Initialize service
-        service = SymmetricEncryptionService()
+        from ck.services.steganography import SteganographyService
         
-        # Validate input files
-        encrypted_file = Path(args.file)
-        if not encrypted_file.exists():
-            print(f"Error: Encrypted file not found: {encrypted_file}")
-            return
-        
-        key_file = Path(args.key_file)
-        if not key_file.exists():
-            print(f"Error: Key file not found: {key_file}")
-            return
-        
-        # Set output file
-        output_file = Path(args.output) if args.output else None
-        
-        # Perform decryption
-        print(f"Decrypting {encrypted_file}...")
-        decrypted_file = service.decrypt_file(
-            encrypted_file=encrypted_file,
-            key_file=key_file,
-            output_file=output_file
-        )
-        
-        print(f"Decryption successful!")
-        print(f"  Decrypted file: {decrypted_file}")
-        
-    except Exception as e:
-        logger.error(f"Decryption failed: {e}")
-        print(f"Error: {e}")
-
-
-def handle_hash_command(args, config: ConfigManager, logger) -> None:
-    """Handle hash command."""
-    from pathlib import Path
-    from ck.services.hashing import HashingService
-    
-    try:
-        # Initialize service
-        service = HashingService()
-        
-        # Validate target path
-        target_path = Path(args.target)
-        if not target_path.exists():
-            print(f"Error: Target not found: {target_path}")
-            return
-        
-        # Determine if target is file or directory
-        if target_path.is_file():
-            print(f"Hashing file {target_path} with {args.algorithm.upper()}...")
-            hash_value, hash_file_path = service.hash_file(
-                file_path=target_path,
-                algorithm=args.algorithm,
-                save_to_file=not args.no_save
-            )
-            
-            print(f"{args.algorithm.upper()}: {hash_value}")
-            if not args.no_save:
-                print(f"Hash saved to: {hash_file_path}")
-                
-        elif target_path.is_dir():
-            print(f"Hashing directory {target_path} with {args.algorithm.upper()}...")
-            hash_value, hash_file_path = service.hash_directory(
-                dir_path=target_path,
-                algorithm=args.algorithm,
-                save_to_file=not args.no_save
-            )
-            
-            print(f"{args.algorithm.upper()}: {hash_value}")
-            if not args.no_save:
-                print(f"Hash saved to: {hash_file_path}")
-        else:
-            print(f"Error: Target is neither a file nor a directory: {target_path}")
-            return
-        
-    except Exception as e:
-        logger.error(f"Hashing failed: {e}")
-        print(f"Error: {e}")
-
-
-def handle_crack_command(args, config: ConfigManager, logger) -> None:
-    """Handle crack command using simplified built-in engine."""
-    from ck.services.cracking import CrackingService
-    try:
-        service = CrackingService()
-
-        # Detection only
-        if getattr(args, 'detect', False):
-            print(f"Analyzing hash: {args.hash_value}")
-            result = service.detect_only(args.hash_value)
-            if result['is_valid_hash']:
-                print(f"Hash Type: {result['most_likely_type'].upper()}")
-                print(f"Description: {result['description']}")
-                print(f"Confidence: {result['confidence']:.1%}")
-                if len(result['all_possibilities']) > 1:
-                    print("\nOther possibilities:")
-                    for alt in result['all_possibilities'][1:]:
-                        print(f"  - {alt['type'].upper()}: {alt['confidence']:.1%}")
-            else:
-                print("Unable to detect hash type (no pattern match)")
-            return
-
-        # Full analysis
-        if getattr(args, 'analyze', False):
-            print(f"Performing comprehensive analysis of: {args.hash_value}")
-            analysis = service.analyze_hash(args.hash_value)
-            det = analysis['detection']['most_likely']
-            print("\nDetection")
-            print(f"Type: {det['type'].upper()} ({det['bit_length']} bits)")
-            print(f"Description: {det['description']}")
-            print(f"Confidence: {det['confidence']:.1%}")
-            strength = analysis['strength_analysis']
-            print("\nSecurity")
-            print(f"Algorithm Rating: {strength['algorithm_security']['rating']}")
-            print(f"Overall Rating: {strength['overall_rating']['rating']} ({strength['overall_rating']['score']}/10)")
-            print(f"Crack Difficulty: {strength['crack_difficulty']['difficulty']}")
-            print(f"Estimated Time: {strength['crack_difficulty']['time_estimate']}")
-            vulns = strength['algorithm_security']['vulnerabilities']
-            if vulns:
-                print("\nVulnerabilities:")
-                for v in vulns:
-                    print(f"  - {v}")
-            recs = strength['recommendations']
-            if recs:
-                print("\nRecommendations:")
-                for r in recs:
-                    print(f"  {r}")
-            return
-
-        # Crack attempt
-        quick_mode = getattr(args, 'quick', False)
-        if quick_mode:
-            print("Quick mode: top common passwords only")
-            result = service.quick_crack(args.hash_value)
-        else:
-            result = service.attempt_crack(
-                hash_value=args.hash_value,
-                hash_type=getattr(args, 'type', None),
-                wordlist_file=getattr(args, 'wordlist', None),
-                max_brute_length=getattr(args, 'max_length', 6),
-                quick_mode=False
-            )
-
-        if result['success']:
-            print("\nHash cracked!")
-            print(f"Password: {result['result']['password']}")
-            print(f"Method: {result['method_used'].replace('_',' ').title()}")
-            print(f"Hash Type: {result['hash_type'].upper()}")
-        else:
-            print(f"\n{result['message']}")
-            if 'suggestions' in result:
-                print("\nSuggestions:")
-                for s in result['suggestions']:
-                    print(f"  - {s}")
-    except Exception as e:
-        logger.error(f"Cracking failed: {e}")
-        print(f"Error: {e}")
-
-
-def handle_hide_command(args, config: ConfigManager, logger) -> None:
-    """Handle hide (steganography) command."""
-    from pathlib import Path
-    from ck.services.steganography import SteganographyService
-    
-    try:
-        # Initialize service
         service = SteganographyService()
         
-        # Validate input files
-        cover_file = Path(args.cover_file)
-        if not cover_file.exists():
-            print(f"Error: Cover file not found: {cover_file}")
-            return
+        # Get cover file info
+        cover_capacity = service.analyze_capacity(image)
         
-        secret_file = Path(args.secret_file)
-        if not secret_file.exists():
-            print(f"Error: Secret file not found: {secret_file}")
-            return
+        with open(data_file, 'rb') as f:
+            secret_size = len(f.read())
         
-        output_file = Path(args.output_file)
-        
-        # Show capacity analysis first
-        print(f"Analyzing cover file capacity...")
-        capacity_info = service.analyze_capacity(
-            cover_file=cover_file,
-            method=args.method
-        )
-        
-        print(f"Cover file: {capacity_info['file']}")
-        print(f"Method: {capacity_info['algorithm']}")
-        print(f"Capacity: {capacity_info['capacity_bytes']} bytes ({capacity_info['capacity_kb']} KB)")
-        print(f"File usage: {capacity_info['capacity_percentage']}%")
-        
-        # Check secret file size
-        secret_size = secret_file.stat().st_size
+        print(f"Cover file: {image}")
+        print(f"Method: LSB Image Steganography")
+        print(f"Capacity: {cover_capacity['capacity_bytes']} bytes")
         print(f"Secret file size: {secret_size} bytes")
+        print(f"Hiding {data_file} in {image}...")
         
-        if secret_size > capacity_info['capacity_bytes']:
-            print(f"Error: Secret file too large. Maximum capacity: {capacity_info['capacity_bytes']} bytes")
-            return
-        
-        # Perform hiding
-        print(f"Hiding {secret_file} in {cover_file}...")
-        success = service.hide_data(
-            cover_file=cover_file,
-            secret_file=secret_file,
-            output_file=output_file,
-            method=args.method,
-            password=args.password
+        service.hide_data(
+            cover_file=image,
+            secret_file=data_file,
+            output_file=output,
+            password=password
         )
         
-        if success:
-            print(f"Data hiding successful!")
-            print(f"  Output file: {output_file}")
-            print(f"  Hidden data: {secret_size} bytes")
-            if args.password:
-                print(f"  Encryption: Yes (password protected)")
-            else:
-                print(f"  Encryption: No")
+        print("File hidden successfully")
         
     except Exception as e:
-        logger.error(f"Data hiding failed: {e}")
         print(f"Error: {e}")
 
 
-def handle_extract_command(args, config: ConfigManager, logger) -> None:
-    """Handle extract (steganography) command."""
-    from pathlib import Path
-    from ck.services.steganography import SteganographyService
-    
+def extract_data_simple(image: str, password: str):
+    """Simple steganography extraction with clean output."""
     try:
-        # Initialize service
+        from ck.services.steganography import SteganographyService
+        
         service = SteganographyService()
         
-        # Validate input file
-        stego_file = Path(args.stego_file)
-        if not stego_file.exists():
-            print(f"Error: Steganography file not found: {stego_file}")
-            return
+        print(f"Extracting data from {image}...")
         
-        # Set output file
-        output_file = Path(args.output) if args.output else None
-        
-        # Perform extraction
-        print(f"Extracting hidden data from {stego_file}...")
-        result = service.extract_data(
-            stego_file=stego_file,
-            output_file=output_file,
-            method=args.method,
-            password=args.password
+        extracted_data = service.extract_data(
+            stego_file=image,
+            password=password
         )
         
-        if isinstance(result, Path):
-            # Data was saved to file
-            extracted_size = result.stat().st_size
-            print(f"Data extraction successful!")
-            print(f"  Extracted file: {result}")
-            print(f"  Extracted data: {extracted_size} bytes")
-        else:
-            # Data returned as bytes
-            print(f"Data extraction successful!")
-            print(f"  Extracted data: {len(result)} bytes")
-            
-            # If no output file specified, try to show as text if possible
-            if not output_file:
-                try:
-                    text_data = result.decode('utf-8')
-                    if len(text_data) <= 500:  # Only show if reasonably short
-                        print(f"  Content preview: {text_data[:200]}{'...' if len(text_data) > 200 else ''}")
-                except UnicodeDecodeError:
-                    print(f"  Content: Binary data (use --output to save to file)")
-        
-        if args.password:
-            print(f"  Decryption: Yes (password used)")
-        else:
-            print(f"  Decryption: No")
+        if isinstance(extracted_data, bytes):
+            try:
+                content = extracted_data.decode('utf-8')
+                print(f"Content: {content}")
+            except:
+                print(f"Extracted {len(extracted_data)} bytes of binary data")
         
     except Exception as e:
-        logger.error(f"Data extraction failed: {e}")
         print(f"Error: {e}")
 
 
-def handle_metadata_command(args, config: ConfigManager, logger) -> None:
-    """Handle metadata analysis command."""
-    from ck.commands.metadata import MetadataCommand
-    
+def show_file_metadata(filename: str):
+    """Show simple file metadata like exiftool."""
     try:
-        # Initialize command
-        command = MetadataCommand()
-        command.logger = logger
+        path = Path(filename)
+        stat = path.stat()
         
-        # Execute command
-        result = command.execute(args)
+        print(f"\nFile Details: {filename}")
+        print("-" * 50)
+        print(f"File Name     : {path.name}")
+        print(f"File Size     : {stat.st_size} bytes")
+        print(f"File Type     : {path.suffix.upper().replace('.', '') if path.suffix else 'Unknown'}")
+        print(f"Created       : {stat.st_ctime}")
+        print(f"Modified      : {stat.st_mtime}")
+        print(f"Permissions   : {oct(stat.st_mode)[-3:]}")
         
-        if result != 0:
-            logger.error("Metadata analysis failed")
-        
+        # Try to detect MIME type
+        try:
+            import mimetypes
+            mime_type, _ = mimetypes.guess_type(filename)
+            if mime_type:
+                print(f"MIME Type     : {mime_type}")
+        except:
+            pass
+            
     except Exception as e:
-        logger.error(f"Metadata analysis failed: {e}")
         print(f"Error: {e}")
+
+
+def main():
+    """Main entry point."""
+    parser = create_parser()
+    
+    if len(sys.argv) == 1:
+        # No arguments, start interactive mode
+        run_interactive()
+        return
+    
+    args = parser.parse_args()
+    
+    # Enable verbose logging if requested
+    if hasattr(args, 'verbose') and args.verbose:
+        logging.getLogger().setLevel(logging.INFO)
+    
+    if args.command in ["interactive", "i"]:
+        run_interactive()
+    
+    elif args.command in ["encrypt", "e"]:
+        encrypt_file_simple(args.file, args.algo, args.password)
+    
+    elif args.command in ["decrypt", "d"]:
+        decrypt_file_simple(args.file, args.password)
+    
+    elif args.command in ["hash", "h"]:
+        generate_multiple_hashes(args.file)
+    
+    elif args.command == "hide":
+        hide_data_simple(args.image, args.data, args.output, args.password)
+    
+    elif args.command == "extract":
+        extract_data_simple(args.image, args.password)
+    
+    elif args.command == "metadata":
+        show_file_metadata(args.file)
+    
+    else:
+        parser.print_help()
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
